@@ -10,6 +10,11 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:ts-back 2026-06-07 → 10 category docs created + /would-update skill wired
+
+10 category analysis docs created (migrate, price, recovery, usage, instruction × ISSUE/ASSET). All follow the anchor-marker format — new entries prepend at top, never edit previous.
+
+Skill: `-toifood/.claude/commands/would-update.md` — invoked as `/would-update ts-back`. Downloads `ts-toifood-back@latest` tarball via `gh api` (no clone), reads -MUST/ prompts + codebase context, generates 10 analyses, writes to category docs, commits and pushes.
 ## ASSET:ts-back 2026-06-07 → initial pipeline created
 
 | File | Purpose |
