@@ -1,0 +1,127 @@
+name: would-update
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    outputs:
+      migrate_issue_prompt: ${{ steps.prompts.outputs.migrate_issue_prompt }}
+      migrate_asset_prompt: ${{ steps.prompts.outputs.migrate_asset_prompt }}
+      price_issue_prompt: ${{ steps.prompts.outputs.price_issue_prompt }}
+      price_asset_prompt: ${{ steps.prompts.outputs.price_asset_prompt }}
+      recovery_issue_prompt: ${{ steps.prompts.outputs.recovery_issue_prompt }}
+      recovery_asset_prompt: ${{ steps.prompts.outputs.recovery_asset_prompt }}
+      usage_issue_prompt: ${{ steps.prompts.outputs.usage_issue_prompt }}
+      usage_asset_prompt: ${{ steps.prompts.outputs.usage_asset_prompt }}
+      instruction_issue_prompt: ${{ steps.prompts.outputs.instruction_issue_prompt }}
+      instruction_asset_prompt: ${{ steps.prompts.outputs.instruction_asset_prompt }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: jayreck996/ts-toifood-back
+          ref: 1-1-1
+          token: ${{ secrets.TOIFOOD_CROSS_REPO_TOKEN }}
+          path: source
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - id: prompts
+        run: node would-read-md.js
+
+  migrate-issue:
+    needs: fetch
+    uses: toifood/-toifood/.github/workflows/must-update-content.yml@main
+    with:
+      prompt: ${{ needs.fetch.outputs.migrate_issue_prompt }}
+    secrets: inherit
+
+  migrate-asset:
+    needs: fetch
+    uses: toifood/-toifood/.github/workflows/must-update-content.yml@main
+    with:
+      prompt: ${{ needs.fetch.outputs.migrate_asset_prompt }}
+    secrets: inherit
+
+  price-issue:
+    needs: fetch
+    uses: toifood/-toifood/.github/workflows/must-update-content.yml@main
+    with:
+      prompt: ${{ needs.fetch.outputs.price_issue_prompt }}
+    secrets: inherit
+
+  price-asset:
+    needs: fetch
+    uses: toifood/-toifood/.github/workflows/must-update-content.yml@main
+    with:
+      prompt: ${{ needs.fetch.outputs.price_asset_prompt }}
+    secrets: inherit
+
+  recovery-issue:
+    needs: fetch
+    uses: toifood/-toifood/.github/workflows/must-update-content.yml@main
+    with:
+      prompt: ${{ needs.fetch.outputs.recovery_issue_prompt }}
+    secrets: inherit
+
+  recovery-asset:
+    needs: fetch
+    uses: toifood/-toifood/.github/workflows/must-update-content.yml@main
+    with:
+      prompt: ${{ needs.fetch.outputs.recovery_asset_prompt }}
+    secrets: inherit
+
+  usage-issue:
+    needs: fetch
+    uses: toifood/-toifood/.github/workflows/must-update-content.yml@main
+    with:
+      prompt: ${{ needs.fetch.outputs.usage_issue_prompt }}
+    secrets: inherit
+
+  usage-asset:
+    needs: fetch
+    uses: toifood/-toifood/.github/workflows/must-update-content.yml@main
+    with:
+      prompt: ${{ needs.fetch.outputs.usage_asset_prompt }}
+    secrets: inherit
+
+  instruction-issue:
+    needs: fetch
+    uses: toifood/-toifood/.github/workflows/must-update-content.yml@main
+    with:
+      prompt: ${{ needs.fetch.outputs.instruction_issue_prompt }}
+    secrets: inherit
+
+  instruction-asset:
+    needs: fetch
+    uses: toifood/-toifood/.github/workflows/must-update-content.yml@main
+    with:
+      prompt: ${{ needs.fetch.outputs.instruction_asset_prompt }}
+    secrets: inherit
+
+  update:
+    needs: [migrate-issue, migrate-asset, price-issue, price-asset, recovery-issue, recovery-asset, usage-issue, usage-asset, instruction-issue, instruction-asset]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Update would files
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          MIGRATE_ISSUE: ${{ needs.migrate-issue.outputs.response }}
+          MIGRATE_ASSET: ${{ needs.migrate-asset.outputs.response }}
+          PRICE_ISSUE: ${{ needs.price-issue.outputs.response }}
+          PRICE_ASSET: ${{ needs.price-asset.outputs.response }}
+          RECOVERY_ISSUE: ${{ needs.recovery-issue.outputs.response }}
+          RECOVERY_ASSET: ${{ needs.recovery-asset.outputs.response }}
+          USAGE_ISSUE: ${{ needs.usage-issue.outputs.response }}
+          USAGE_ASSET: ${{ needs.usage-asset.outputs.response }}
+          INSTRUCTION_ISSUE: ${{ needs.instruction-issue.outputs.response }}
+          INSTRUCTION_ASSET: ${{ needs.instruction-asset.outputs.response }}
+        run: node would-update-content.js
