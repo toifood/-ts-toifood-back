@@ -10,6 +10,24 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:ts-back 2026-06-07 16:00 → BUG and ANALYSIS categories added — pipeline now 7 categories × 14 docs
+
+Two new analysis categories added to the would-update pipeline:
+
+| Category | ISSUE prompt | ASSET prompt |
+|---|---|---|
+| `bug` | Undiscovered bugs — edge cases, race conditions, null dereferences, async pitfalls | Existing bug-prevention assets — error handling, validation, defensive code |
+| `analysis` | Overall code quality — technical debt, architectural concerns, scalability | Codebase health summary — what's well-built, prod-ready, engineering strengths |
+
+Prompts embedded directly in skill (`would-update.md`) — no `-MUST/` files needed for these two.
+
+**Files added to `would/`:** `BUG-ISSUE-V1.md`, `BUG-ASSET-V1.md`, `ANALYSIS-ISSUE-V1.md`, `ANALYSIS-ASSET-V1.md`
+
+**Updated:** `would-update-content.js` (4 new env vars), `would-update-csv.js` (CATEGORIES now 7), `would-read-md.js` (embedded prompts for bug/analysis).
+
+## ASSET:ts-back 2026-06-07 16:00 → skill branch detection fixed — reads newest created branch of ts-toifood-back
+
+Skill now correctly identifies the most recently created branch of `ts-toifood-back` using `compare/main...{branch}` to find each branch's creation date. Previously used `zipball/latest` which resolved to `main` (no `-MUST/`), silently skipping all 5 standard category prompts.
 ## ASSET:ts-back 2026-06-07 14:16 → file structure aligned to toiflow/ts-anz pattern
 
 **Four JS files (mirrors ts-anz):**

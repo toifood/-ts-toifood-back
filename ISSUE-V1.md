@@ -10,6 +10,11 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:ts-back 2026-06-07 16:00 → skill was reading main branch — -MUST/ prompts never loaded
+
+`zipball/latest` in the skill resolved to `main` on `ts-toifood-back`. `main` has no `-MUST/` directory, so migrate/price/recovery/usage/instruction prompts were not found. Only `bug` and `analysis` (embedded prompts) produced real output on prior runs.
+
+**Fix:** skill now uses `compare/main...{branch}` creation-date detection — correctly picks `1-1-1` which has `-MUST/`.
 ## ISSUE:ts-back 2026-06-07 13:58 → previous entry incorrect — pipeline uses GitHub Actions + self-hosted runner, not wmux
 
 Previous entry stated "skill running locally via wmux" — this was superseded before first run. Final architecture uses GitHub Actions self-hosted runner on Mac Mini (`jayreck` account) dispatching the `/would-update` skill via `claude --dangerously-skip-permissions --print`. No wmux dependency, no `ANTHROPIC_API_KEY` needed.
