@@ -7,7 +7,7 @@ const path = require('path');
 
 const WORKSPACE  = process.env.GITHUB_WORKSPACE || __dirname;
 const WOULD_DIR  = path.join(WORKSPACE, 'could');
-const CSV_PATH   = path.join(WOULD_DIR, 'log-asset-v1.csv');
+const CSV_PATH   = path.join(WOULD_DIR, 'skill-metric-v1.csv');
 const HEADERS    = 'date,category,type,headline\n';
 
 const CATEGORIES = ['migrate', 'price', 'recovery', 'usage', 'instruction', 'bug', 'analysis'];

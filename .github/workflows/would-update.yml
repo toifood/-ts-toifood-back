@@ -31,5 +31,5 @@ jobs:
           node would-update-csv.js
           git config user.name "would-update"
           git config user.email "admin@toigroup.co.nz"
-          git add could/log-asset-v1.csv
+          git add could/skill-metric-v1.csv
           git diff --cached --quiet || git commit -m "would-update: log $(date '+%Y-%m-%d')" && git push
