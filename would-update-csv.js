@@ -6,7 +6,8 @@ const fs   = require('fs');
 const path = require('path');
 
 const WORKSPACE  = process.env.GITHUB_WORKSPACE || __dirname;
-const WOULD_DIR  = path.join(WORKSPACE, 'could');
+const COULD_DIR  = path.join(WORKSPACE, 'could');
+const WOULD_DIR  = path.join(WORKSPACE, 'would');
 const CSV_PATH   = path.join(WOULD_DIR, 'skill-metric-v1.csv');
 const HEADERS    = 'date,category,type,headline\n';
 
@@ -44,7 +45,7 @@ function main() {
 
   for (const cat of CATEGORIES) {
     for (const type of TYPES) {
-      const file     = path.join(WOULD_DIR, `${cat.toUpperCase()}-${type.toUpperCase()}-V1.md`);
+      const file     = path.join(COULD_DIR, `${cat.toUpperCase()}-${type.toUpperCase()}-V1.md`);
       const headline = extractHeadline(file);
       if (headline) rows.push(toCsvRow(date, cat, type, headline));
     }
@@ -64,7 +65,7 @@ function main() {
 
   const updated = existing + rows.join('');
   fs.writeFileSync(CSV_PATH, updated);
-  console.log(`✅ would/-log-asset-v1.csv — ${rows.length} rows appended (${date})`);
+  console.log(`✅ would/skill-metric-v1.csv — ${rows.length} rows appended (${date})`);
 }
 
 main();
