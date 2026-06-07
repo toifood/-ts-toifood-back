@@ -10,6 +10,18 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:ts-back 2026-06-07 → bug fix reference — ts-toifood-back branch 1-1-1
+
+Fixes applied via BUG-ISSUE-V1 skill analysis. Build clean, pushed to `jayreck996/ts-toifood-back` branch `1-1-1`.
+
+| Fix | File | Detail |
+|---|---|---|
+| Apple JWKS cache | `src/routes/auth.ts` | `getCachedAppleKeys()` — module-level cache, 1hr TTL, prevents N concurrent `appleid.apple.com/auth/keys` fetches |
+| XSS in password reset | `src/routes/auth.ts` | `escHtml()` escapes `&`, `<`, `>`, `"` before HTML interpolation of `token` and `msg` |
+| Atomic rate limit | `src/middleware/rateLimit.ts` | Lua: `INCR` + `EXPIRE` in single round-trip — eliminates race where two requests both see `count===1` |
+| Unhandled promise | `src/routes/recipes.ts` | `void initPlaceholder()` — startup race on OG image placeholder removed |
+| Plural stem matching | `src/routes/cookRecords.ts` | `pluralStem()` rewritten — irregular map (eggs→egg, geese→goose), `-ee` invariant guard (cheese stays cheese), safer `s`-strip |
+
 ## ASSET:ts-back 2026-06-07 17:30 → could/ and would/ split by file type
 
 | Directory | File types | Contents |

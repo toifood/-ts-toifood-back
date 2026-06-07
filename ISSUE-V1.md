@@ -10,6 +10,19 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:ts-back 2026-06-07 → 5 bugs fixed in ts-toifood-back (branch 1-1-1, commit 0c111be)
+
+Identified via `BUG-ISSUE-V1.md` skill output. All 6 reviewed; 5 fixed, 1 confirmed already handled.
+
+| # | Bug | File | Resolution |
+|---|---|---|---|
+| 1 | Unawaited `initPlaceholder()` | `src/routes/recipes.ts` | `void initPlaceholder()` |
+| 2 | Apple JWKS fetched on every auth call | `src/routes/auth.ts` | `getCachedAppleKeys()` — 1hr in-memory cache |
+| 3 | Rate limit INCR/EXPIRE race condition | `src/middleware/rateLimit.ts` | Atomic Lua script |
+| 4 | HTML injection in password reset form | `src/routes/auth.ts` | `escHtml()` on `token` + `msg` |
+| 5 | `stemMatch` false positives | `src/routes/cookRecords.ts` | `pluralStem()` rewritten with irregular map + `-ee` guard |
+| 6 | FK constraint on user delete | `src/routes/users.ts` | Already handled — `emailVerificationToken.deleteMany` before `user.delete` |
+
 ## ISSUE:ts-back 2026-06-07 16:00 → skill was reading main branch — -MUST/ prompts never loaded
 
 `zipball/latest` in the skill resolved to `main` on `ts-toifood-back`. `main` has no `-MUST/` directory, so migrate/price/recovery/usage/instruction prompts were not found. Only `bug` and `analysis` (embedded prompts) produced real output on prior runs.
