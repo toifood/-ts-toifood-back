@@ -10,6 +10,24 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:ts-back 2026-06-07 17:00 → output directory renamed would/ → could/
+
+All 14 category docs moved from `would/` to `could/`. JS files, workflow, and skill all updated to match. `could/log-asset-v1.csv` is the weekly CSV headline log path (file not yet committed — needs to be added).
+
+## ASSET:ts-back 2026-06-07 17:00 → ts-toifood-back log files renamed to uppercase
+
+Runtime log files in `~/ts-toifood-back/logs/` renamed and source references updated:
+
+| Before | After |
+|---|---|
+| `recipe-metrics.csv` | `RECIPE-METRIC.csv` |
+| `discover-metrics.csv` | `DISCOVER-METRIC.csv` |
+| `digest-log.csv` | `DIGEST-METRIC.csv` |
+| `memory-metrics.csv` | `MEMORY-METRIC.csv` |
+| `digest.log` | `DIGEST-LOG.log` |
+| `store-report.log` | `STORE-LOG.log` |
+
+Updated in: `src/routes/recipes.ts`, `src/routes/chat.ts`, `src/digest.ts`, `src/slack-bot.ts`. Rebuilt `dist/`. Pushed to branch `1-1-1`.
 ## ASSET:ts-back 2026-06-07 16:00 → BUG and ANALYSIS categories added — pipeline now 7 categories × 14 docs
 
 Two new analysis categories added to the would-update pipeline:
