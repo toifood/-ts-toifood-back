@@ -10,6 +10,24 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:ts-back 2026-06-07 14:16 → file structure aligned to toiflow/ts-anz pattern
+
+**Four JS files (mirrors ts-anz):**
+| File | Role |
+|---|---|
+| `would-read-md.js` | Reads `-MUST/` instruction files + codebase context, builds 10 prompts |
+| `would-update-md.js` | Local runner — invokes `/would-update ts-back` skill via `claude --print` |
+| `would-update-content.js` | Writes 10 analyses to `would/` files via GitHub API (JS pipeline fallback) |
+| `would-update-csv.js` | Reads `would/` files, extracts latest entry headlines, appends to `would/-log-codebase-v1.csv` |
+
+**Output files moved to `would/` (mirrors ts-anz `would/` pattern):**
+- `{category}-ISSUE.md` / `{category}-ASSET.md` at root → `would/{category}-issue-v1.md` / `would/{category}-asset-v1.md`
+- Added `would/-log-codebase-v1.csv` — weekly headline log
+
+**Skill updated:** target paths changed from `$GITHUB_WORKSPACE/{category}-ISSUE.md` → `$GITHUB_WORKSPACE/would/{category}-issue-v1.md`
+
+**Workflow updated:** CSV step added after skill run — `node would-update-csv.js` → `git commit + push`
+
 ## ASSET:ts-back 2026-06-07 13:58 → pipeline fully operational — first run confirmed 2026-06-07 13:55
 
 **First successful run:** `f5d3ecf` committed to `toifood/ts-back` at 2026-06-07 13:55 — "would-update: 2026-06-07 13:55 codebase analysis"
