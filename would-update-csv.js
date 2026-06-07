@@ -6,7 +6,7 @@ const fs   = require('fs');
 const path = require('path');
 
 const WORKSPACE  = process.env.GITHUB_WORKSPACE || __dirname;
-const WOULD_DIR  = path.join(WORKSPACE, 'would');
+const WOULD_DIR  = path.join(WORKSPACE, 'could');
 const CSV_PATH   = path.join(WOULD_DIR, 'log-asset-v1.csv');
 const HEADERS    = 'date,category,type,headline\n';
 

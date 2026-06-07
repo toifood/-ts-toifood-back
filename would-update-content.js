@@ -5,20 +5,20 @@ const OWNER = process.env.GITHUB_REPOSITORY?.split('/')[0] || 'toifood';
 const TOKEN = process.env.GITHUB_TOKEN;
 
 const files = {
-  'would/MIGRATE-ISSUE-V1.md':     process.env.MIGRATE_ISSUE,
-  'would/MIGRATE-ASSET-V1.md':     process.env.MIGRATE_ASSET,
-  'would/PRICE-ISSUE-V1.md':       process.env.PRICE_ISSUE,
-  'would/PRICE-ASSET-V1.md':       process.env.PRICE_ASSET,
-  'would/RECOVERY-ISSUE-V1.md':    process.env.RECOVERY_ISSUE,
-  'would/RECOVERY-ASSET-V1.md':    process.env.RECOVERY_ASSET,
-  'would/USAGE-ISSUE-V1.md':       process.env.USAGE_ISSUE,
-  'would/USAGE-ASSET-V1.md':       process.env.USAGE_ASSET,
-  'would/INSTRUCTION-ISSUE-V1.md': process.env.INSTRUCTION_ISSUE,
-  'would/INSTRUCTION-ASSET-V1.md': process.env.INSTRUCTION_ASSET,
-  'would/BUG-ISSUE-V1.md':         process.env.BUG_ISSUE,
-  'would/BUG-ASSET-V1.md':         process.env.BUG_ASSET,
-  'would/ANALYSIS-ISSUE-V1.md':    process.env.ANALYSIS_ISSUE,
-  'would/ANALYSIS-ASSET-V1.md':    process.env.ANALYSIS_ASSET,
+  'could/MIGRATE-ISSUE-V1.md':     process.env.MIGRATE_ISSUE,
+  'could/MIGRATE-ASSET-V1.md':     process.env.MIGRATE_ASSET,
+  'could/PRICE-ISSUE-V1.md':       process.env.PRICE_ISSUE,
+  'could/PRICE-ASSET-V1.md':       process.env.PRICE_ASSET,
+  'could/RECOVERY-ISSUE-V1.md':    process.env.RECOVERY_ISSUE,
+  'could/RECOVERY-ASSET-V1.md':    process.env.RECOVERY_ASSET,
+  'could/USAGE-ISSUE-V1.md':       process.env.USAGE_ISSUE,
+  'could/USAGE-ASSET-V1.md':       process.env.USAGE_ASSET,
+  'could/INSTRUCTION-ISSUE-V1.md': process.env.INSTRUCTION_ISSUE,
+  'could/INSTRUCTION-ASSET-V1.md': process.env.INSTRUCTION_ASSET,
+  'could/BUG-ISSUE-V1.md':         process.env.BUG_ISSUE,
+  'could/BUG-ASSET-V1.md':         process.env.BUG_ASSET,
+  'could/ANALYSIS-ISSUE-V1.md':    process.env.ANALYSIS_ISSUE,
+  'could/ANALYSIS-ASSET-V1.md':    process.env.ANALYSIS_ASSET,
 };
 
 function api(method, path, body) {
