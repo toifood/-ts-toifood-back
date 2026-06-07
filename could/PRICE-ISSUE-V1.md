@@ -10,6 +10,19 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:price {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:price 2026-06-07 16:30 → Insight AI calls unbilled and unmetered; openai provider in recipe generation has no cost cap; Redis failure silently removes all rate limits
+
+**Unmetered AI cost paths:**
+- `runInsightAnalysis()` in `src/services/ai/insights.ts` calls the AI provider (Ollama/Claude/OpenAI) to generate insights for users. This runs server-side outside any rate limit middleware — no hourly cap, no per-user throttle. If the insights endpoint is triggered frequently, AI costs accumulate silently.
+- The YouTube video search (`findRecipeVideo()`) runs on every recipe save — Google API quota is untracked.
+
+**Rate limit bypass risk:**
+- `rateLimit.ts` catches Redis errors and silently skips rate limiting (`console.warn` only). If Redis goes down, all users — including free tier — can generate unlimited recipes, directly driving OpenAI/Claude API costs.
+- The `admin` role completely bypasses rate limits but there is no audit log of admin recipe generation volume.
+
+**Pricing model gaps:**
+- `premium` role is stored in DB but there is no subscription management, payment webhook, or Stripe integration. Role can only be set via direct DB update or admin API — no automated downgrade on payment failure.
+- No metering of token usage per AI call — cost per recipe is unknown and untracked.
 ## ISSUE:price 2026-06-07 10:00 → Claude/OpenAI API costs invisible; Redis outage silently disables rate limits; no billing integration for premium role
 
 **Cost visibility gaps:**

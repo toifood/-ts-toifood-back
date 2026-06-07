@@ -10,6 +10,21 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:price {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:price 2026-06-07 16:30 → Redis-backed hourly rate limits per role/provider; free=3 Ollama/2 Claude, premium=10/5, admin=unlimited
+
+**Rate limit implementation (`src/middleware/rateLimit.ts`):**
+- Per-user, per-provider (ollama/claude) Redis counters with 1-hour TTL
+- Role-based limits: `free` → 3 Ollama / 2 Claude per hour; `premium` → 10 / 5; `admin` → bypass
+- `getRecipeUsage()` function exposes current usage counters to the client (visible in UI)
+- `express-rate-limit` package used on all auth endpoints (10 req/15 min window) to prevent brute force
+
+**Cost-control infrastructure:**
+- Ollama (local `qwen2.5:7b`) is the default provider — zero marginal API cost for the majority of usage
+- AI provider selection is runtime-configurable via `AI_PROVIDER` env var — can switch away from paid providers without deployment
+- AppStore/PlayStore metric polling uses ES256 JWT tokens with 20-minute expiry — scoped API access
+
+**UserRole enum:** `free` / `premium` / `admin` — role gates rate limits and premium feature access
+**`isPremium` flag** computed server-side as `role !== "free"`, so no client-side bypass possible
 ## ASSET:price 2026-06-07 10:00 → Role-based rate limits via Redis; 3 AI providers with cost profile
 
 **Rate limit architecture** (`src/middleware/rateLimit.ts`):

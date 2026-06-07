@@ -10,6 +10,22 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:usage {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:usage 2026-06-07 16:30 → CookRecord data collected but no aggregation endpoint; insight trigger unknown; storeMetrics data only via admin route
+
+**CookRecord analytics gap:**
+- `CookRecord` now stores pantry vs. grocery ingredient breakdowns per cook session, but there is no aggregation endpoint to answer questions like "what % of ingredients users typically have in pantry" or "how often do cooks abandon vs. complete". The data is collected but not surfaced.
+
+**Insight trigger opacity:**
+- `runInsightAnalysis()` exists in `src/services/ai/insights.ts` but it is unclear from the codebase when/where it is triggered. If it is triggered only on recipe save, users with old recipe libraries will never receive insights. No scheduled job or batch runner is visible.
+
+**Store metrics:**
+- `GET /store-metrics` is behind requireAdmin — only accessible to admins. If the product team wants to see AppStore/PlayStore install counts, they need admin credentials. No read-only analytics role exists.
+
+**Flow view tracking:**
+- `UserFlowView` tracks flow completion, skipped steps, and JSON responses — useful data — but no admin endpoint exists to query aggregate flow completion rates or step drop-off.
+
+**Continent/dietary data collected but unused in reporting:**
+- `continentPreferences`, `dietaryTags`, `mealType` are stored per-recipe but only surfaced in the public profile endpoint. No internal dashboard or aggregate query exists.
 ## ISSUE:usage 2026-06-07 10:00 → No analytics beyond console logs; recipe provider not tracked per-user in DB; UserFlowView written but never queried
 
 **Analytics gap:**

@@ -10,6 +10,25 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:usage {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:usage 2026-06-07 16:30 → CookRecord now persists full cook session data (ingredients, pantry/grocery split, servings, status); AppStore + PlayStore metrics polling in place
+
+**CookRecord data model (new in 1-1-1):**
+- Per-session: `ingredientCount`, `pantryCount`, `groceryCount` counters for quick aggregation
+- Full ingredient arrays (`ingredients`, `pantryItems`, `groceryItems`) stored as JSON for detailed replay
+- `servings` override recorded (user may adjust from recipe default)
+- `CookStatus` lifecycle: STARTED → COMPLETED or ABANDONED — enables funnel analysis
+
+**Store metrics (`src/services/appstore.ts`, `src/services/playstore.ts`):**
+- AppStore: 30-day installs, sessions, active devices, crashes via App Store Connect API (ES256 JWT auth)
+- PlayStore: 7-day crash rate, ANR rate via Google Play Developer Reporting API (service account)
+- Both services return `null` gracefully if credentials are absent — no crash on unconfigured environments
+
+**Recipe usage tracking:**
+- `GET /recipes/usage` exposes per-user Redis quota state (used/max/ttl) for both Ollama and Claude providers
+- `provider` field on Recipe model records which AI generated each recipe — enables provider usage analysis per user
+
+**Request-level logging:**
+- Every HTTP request logs method, path, status code, latency, and userId — structured for log grep/analysis
 ## ASSET:usage 2026-06-07 10:00 → Usage tracking: request middleware logs, Redis quota counters, /stats + /recipes/usage endpoints, Slack alerts
 
 **Request logging** (`src/index.ts`):

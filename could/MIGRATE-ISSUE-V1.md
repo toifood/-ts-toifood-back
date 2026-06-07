@@ -10,6 +10,18 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:migrate {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:migrate 2026-06-07 16:30 → CookRecord and UserInsight models added in 1-1-1 with no documented migration path; ogImage Bytes column growing unbounded
+
+**New models since last analysis (1-1-1 branch):**
+- `CookRecord` — tracks cook session lifecycle (STARTED/COMPLETED/ABANDONED), stores `ingredients`, `pantryItems`, `groceryItems` as JSON blobs, plus `pantryCount`/`groceryCount` counters
+- `UserInsight` — AI-generated per-category suggestions with `@@unique([userId, category])` constraint meaning only one pending insight per category per user at a time
+- `RecipeReview` — star rating model with `@@unique([userId, recipeId])`
+
+**Migration risks:**
+- `ogImage Bytes` column on Recipe has no size cap — as recipe count grows, PostgreSQL table bloat will increase significantly. No archival strategy exists.
+- `UserInsight.data` and `CookRecord.ingredients/pantryItems/groceryItems` are all raw `Json` columns with no schema enforcement — any structural change to AI output or ingredient format silently passes.
+- `@@unique([userId, category])` on UserInsight means upsert collisions will silently overwrite insight data if Prisma uses `upsert` in insights service — verify this is intentional.
+- `DietaryPreference` lacks cascade delete from User in schema — manual deletion required in `DELETE /users/me` route (and currently is done manually, but if a new delete path is added without mirroring, orphans will accumulate).
 ## ISSUE:migrate 2026-06-07 10:00 → Schema far ahead of README docs; appleId, role enum, ogImage, shareToken, and 8 undocumented models added
 
 Prisma schema has grown significantly beyond what README describes. The following are present in schema but undocumented:

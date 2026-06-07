@@ -10,6 +10,31 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:migrate {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:migrate 2026-06-07 16:30 → Schema now 13 models, 4 enums; CookRecord + UserInsight added in branch 1-1-1; cascade deletes mostly correct
+
+**Current schema summary (branch 1-1-1):**
+
+| Model | New in 1-1-1? | Notes |
+|---|---|---|
+| User | no | Core model, 18 fields |
+| Recipe | no | ogImage Bytes column present |
+| RecipeReview | no | @@unique(userId+recipeId) |
+| SavedList / SavedListItem | no | Cascade on list delete |
+| DietaryPreference | no | No cascade from User (manual delete) |
+| PantryItem | no | @@unique(userId+ingredient), cascade from User |
+| Flow / UserFlowView | no | Onboarding flows system |
+| UserInsight | **yes** | @@unique(userId+category), cascade from User |
+| CookRecord | **yes** | Cascade from User and Recipe; JSON fields for ingredient lists |
+| PasswordResetToken / EmailVerificationToken | no | Manual delete in users route |
+
+**Enums:** `UserRole` (free/premium/admin) · `FlowTrigger` (first_login/manual) · `CookStatus` (STARTED/COMPLETED/ABANDONED)
+
+**Prisma migrations folder:** `/tmp/toifood-source/prisma/migrations/` exists, migrations tracked.
+
+**Cascade coverage:**
+- User → PantryItem, SavedList, UserFlowView, UserInsight, CookRecord: onDelete Cascade ✓
+- User → DietaryPreference, PasswordResetToken, EmailVerificationToken: no cascade (manual delete in route) — documented in DELETE /users/me
+- Recipe → SavedListItem, RecipeReview, CookRecord: onDelete Cascade ✓
 ## ASSET:migrate 2026-06-07 10:00 → Prisma schema: 12 models, 3 enums, PostgreSQL on Mac mini M4
 
 Current authoritative schema (`prisma/schema.prisma`):

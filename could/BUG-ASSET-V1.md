@@ -10,3 +10,26 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:bug {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:bug 2026-06-07 16:30 → Strong validation on all input boundaries; ownership checks on all mutable routes; Prisma unique constraints prevent duplicates; auth rate limiting
+
+**Input validation coverage:**
+- `POST /auth/register`: email ≤100 chars, name ≤50 chars, password 8–128 chars — all validated before DB write
+- `PATCH /users/me/preferences`: DietaryFilter enum validation, max 3 filters enforced, valid continent list enforced
+- `PATCH /users/me`: ageRange and gender validated against explicit enum lists before DB update
+- `POST /pantry`: ingredient trimmed, 30-item cap enforced, duplicate checked atomically (unique constraint + P2002 catch)
+- `POST /lists`: max 5 lists per user enforced before creation
+
+**Ownership guards on all mutations:**
+- Every mutable route (records, pantry, lists, recipes) fetches the resource with `{ id, userId: req.userId! }` — prevents IDOR attacks. No route updates by id alone.
+
+**Duplicate prevention:**
+- `PantryItem @@unique([userId, ingredient])` — DB-level duplicate guard with P2002 catch in route
+- `RecipeReview @@unique([userId, recipeId])` — one review per recipe per user enforced at DB level
+- `UserInsight @@unique([userId, category])` — single active insight per category per user
+
+**Auth security:**
+- bcrypt with cost factor 12 for password hashing
+- JWT with 7-day expiry, secret checked at startup
+- `express-rate-limit` on all auth endpoints: 10 requests / 15 minutes
+- Apple Sign-In verified with RS256 against Apple's JWKS — no client-supplied identity accepted
+- Google OAuth identity token verified server-side via Passport strategy
