@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// would-update-csv.js — append weekly analysis headlines to would/-log-codebase-v1.csv
+// would-update-csv.js — append weekly analysis headlines to would/log-codebase-v1.csv
 // Usage: node would-update-csv.js  (run after /would-update skill, from $GITHUB_WORKSPACE)
 
 const fs   = require('fs');
@@ -7,7 +7,7 @@ const path = require('path');
 
 const WORKSPACE  = process.env.GITHUB_WORKSPACE || __dirname;
 const WOULD_DIR  = path.join(WORKSPACE, 'would');
-const CSV_PATH   = path.join(WOULD_DIR, '-log-codebase-v1.csv');
+const CSV_PATH   = path.join(WOULD_DIR, 'log-codebase-v1.csv');
 const HEADERS    = 'date,category,type,headline\n';
 
 const CATEGORIES = ['migrate', 'price', 'recovery', 'usage', 'instruction'];
