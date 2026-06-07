@@ -44,7 +44,7 @@ function main() {
 
   for (const cat of CATEGORIES) {
     for (const type of TYPES) {
-      const file     = path.join(WOULD_DIR, `${cat}-${type}-v1.md`);
+      const file     = path.join(WOULD_DIR, `${cat.toUpperCase()}-${type.toUpperCase()}-V1.md`);
       const headline = extractHeadline(file);
       if (headline) rows.push(toCsvRow(date, cat, type, headline));
     }

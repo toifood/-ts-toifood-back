@@ -5,16 +5,16 @@ const OWNER = process.env.GITHUB_REPOSITORY?.split('/')[0] || 'toifood';
 const TOKEN = process.env.GITHUB_TOKEN;
 
 const files = {
-  'would/migrate-issue-v1.md':     process.env.MIGRATE_ISSUE,
-  'would/migrate-asset-v1.md':     process.env.MIGRATE_ASSET,
-  'would/price-issue-v1.md':       process.env.PRICE_ISSUE,
-  'would/price-asset-v1.md':       process.env.PRICE_ASSET,
-  'would/recovery-issue-v1.md':    process.env.RECOVERY_ISSUE,
-  'would/recovery-asset-v1.md':    process.env.RECOVERY_ASSET,
-  'would/usage-issue-v1.md':       process.env.USAGE_ISSUE,
-  'would/usage-asset-v1.md':       process.env.USAGE_ASSET,
-  'would/instruction-issue-v1.md': process.env.INSTRUCTION_ISSUE,
-  'would/instruction-asset-v1.md': process.env.INSTRUCTION_ASSET,
+  'would/MIGRATE-ISSUE-V1.md':     process.env.MIGRATE_ISSUE,
+  'would/MIGRATE-ASSET-V1.md':     process.env.MIGRATE_ASSET,
+  'would/PRICE-ISSUE-V1.md':       process.env.PRICE_ISSUE,
+  'would/PRICE-ASSET-V1.md':       process.env.PRICE_ASSET,
+  'would/RECOVERY-ISSUE-V1.md':    process.env.RECOVERY_ISSUE,
+  'would/RECOVERY-ASSET-V1.md':    process.env.RECOVERY_ASSET,
+  'would/USAGE-ISSUE-V1.md':       process.env.USAGE_ISSUE,
+  'would/USAGE-ASSET-V1.md':       process.env.USAGE_ASSET,
+  'would/INSTRUCTION-ISSUE-V1.md': process.env.INSTRUCTION_ISSUE,
+  'would/INSTRUCTION-ASSET-V1.md': process.env.INSTRUCTION_ASSET,
 };
 
 function api(method, path, body) {
