@@ -10,6 +10,57 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:ts-back 2026-06-07 → error code reference — all routes
+
+All error responses follow `{ error: string, code: string, ...extras }`. Frontend can switch on `code` without parsing error strings.
+
+**Shared codes (appear in multiple routes):**
+| Code | Meaning |
+|---|---|
+| `MISSING_FIELDS` | Required field absent or wrong type |
+| `FORBIDDEN` | Auth passed but action not allowed |
+| `SERVER_ERROR` | Unexpected internal failure |
+| `RECIPE_NOT_FOUND` | Recipe absent or not owned by user |
+| `EMAIL_EXISTS` | Email already registered / in use |
+| `PASSWORD_INVALID` | Length outside 8–128 chars |
+| `USER_NOT_FOUND` | Authenticated user missing from DB |
+
+**Route-specific codes:**
+| Code | Route | Trigger |
+|---|---|---|
+| `EMAIL_TOO_LONG` | auth | email > 100 chars |
+| `NAME_TOO_LONG` | auth | name > 50 chars |
+| `AUTH_ERROR` | auth | Passport internal error |
+| `INVALID_CREDENTIALS` | auth | Wrong email or password |
+| `APPLE_KEY_NOT_FOUND` | auth | No matching JWKS key for Apple token |
+| `APPLE_AUTH_FAILED` | auth | Apple JWT verify threw |
+| `GOOGLE_AUTH_FAILED` | auth | Google callback user absent |
+| `TOKEN_INVALID` | auth | Verify/reset token expired or not found |
+| `FILTERS_INVALID` | users | filters not an array |
+| `FILTERS_LIMIT_EXCEEDED` | users | > 3 dietary filters |
+| `PRIVACY_INVALID` | users | privacy field not boolean |
+| `AGE_RANGE_INVALID` | users | ageRange not in enum |
+| `GENDER_INVALID` | users | gender not in enum |
+| `PASSWORD_INCORRECT` | users | currentPassword wrong |
+| `OAUTH_ACCOUNT` | users | tried to set password on OAuth account |
+| `INGREDIENTS_INVALID` | recipes | all ingredients empty after sanitisation |
+| `INGREDIENT_LIMIT_EXCEEDED` | recipes | > 50 ingredients |
+| `GENERATION_FAILED` | recipes | AI provider threw |
+| `NOTE_INVALID` | recipes | note field wrong type |
+| `NOTE_TOO_LONG` | recipes | note > 500 chars |
+| `STARS_INVALID` | recipes | stars not integer 1–5 |
+| `RECIPE_NOT_SHARED` | recipes | unshare called on non-shared recipe |
+| `RECORD_NOT_FOUND` | cookRecords | cook record absent or not owned |
+| `LISTS_LIMIT_EXCEEDED` | lists | > 5 custom lists |
+| `LIST_NOT_FOUND` | lists | list absent or not owned |
+| `STATUS_INVALID` | insights | status not accepted/dismissed |
+| `INSIGHT_NOT_FOUND` | insights | insight absent or not owned |
+| `INSIGHT_RESOLVED` | insights | insight already accepted/dismissed |
+| `TRIGGER_INVALID` | admin | trigger not first_login/manual |
+| `INVALID_INGREDIENT` | pantry | ingredient empty/missing |
+| `INGREDIENT_EXISTS` | pantry | ingredient already in pantry |
+| `PANTRY_LIMIT_EXCEEDED` | pantry | pantry at 50-item cap |
+
 ## ASSET:ts-back 2026-06-07 → pantry cap — 50 items
 
 `PANTRY_CAP = 50` in `src/routes/pantry.ts`. Returns `400 PANTRY_LIMIT_EXCEEDED` with `{ limit: 50, count }` when exceeded.

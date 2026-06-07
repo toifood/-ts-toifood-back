@@ -10,6 +10,23 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:ts-back 2026-06-07 → error codes added to all routes (except flows.ts)
+
+Every JSON error response now includes a `code` field. Previously only `pantry.ts` had codes — all other routes returned bare `{ error: "..." }` strings.
+
+| Route | Codes |
+|---|---|
+| `auth.ts` | `MISSING_FIELDS`, `EMAIL_TOO_LONG`, `NAME_TOO_LONG`, `PASSWORD_INVALID`, `EMAIL_EXISTS`, `AUTH_ERROR`, `INVALID_CREDENTIALS`, `APPLE_KEY_NOT_FOUND`, `APPLE_AUTH_FAILED`, `GOOGLE_AUTH_FAILED`, `TOKEN_INVALID` |
+| `users.ts` | `USER_NOT_FOUND`, `FILTERS_INVALID`, `FILTERS_LIMIT_EXCEEDED`, `PRIVACY_INVALID`, `PASSWORD_INVALID`, `AGE_RANGE_INVALID`, `GENDER_INVALID`, `MISSING_FIELDS`, `PASSWORD_INCORRECT`, `OAUTH_ACCOUNT`, `EMAIL_EXISTS`, `SERVER_ERROR` |
+| `recipes.ts` | `MISSING_FIELDS`, `INGREDIENTS_INVALID`, `GENERATION_FAILED`, `SERVER_ERROR`, `NOTE_INVALID`, `NOTE_TOO_LONG`, `RECIPE_NOT_FOUND`, `FORBIDDEN`, `STARS_INVALID`, `RECIPE_NOT_SHARED` |
+| `cookRecords.ts` | `MISSING_FIELDS`, `RECIPE_NOT_FOUND`, `RECORD_NOT_FOUND` |
+| `lists.ts` | `LISTS_LIMIT_EXCEEDED`, `MISSING_FIELDS`, `LIST_NOT_FOUND`, `RECIPE_NOT_FOUND` |
+| `insights.ts` | `STATUS_INVALID`, `INSIGHT_NOT_FOUND`, `INSIGHT_RESOLVED` |
+| `admin.ts` | `FORBIDDEN`, `MISSING_FIELDS`, `TRIGGER_INVALID` |
+| `pantry.ts` | already had `INVALID_INGREDIENT`, `INGREDIENT_EXISTS`, `PANTRY_LIMIT_EXCEEDED` |
+
+Build clean. Committed `902a635` to branch `1-1-1`.
+
 ## ISSUE:ts-back 2026-06-07 → pantry cap increased 30 → 50; PM2 restarted
 
 `PANTRY_CAP` in `src/routes/pantry.ts` updated from `30` to `50`. Build clean. PM2 restarted (`toifood-back` id 0).
