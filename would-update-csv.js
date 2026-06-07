@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// would-update-csv.js — append weekly analysis headlines to would/log-asset-v1.csv
+// would-update-csv.js â€” append weekly analysis headlines to would/log-asset-v1.csv
 // Usage: node would-update-csv.js  (run after /would-update skill, from $GITHUB_WORKSPACE)
 
 const fs   = require('fs');
@@ -8,7 +8,7 @@ const path = require('path');
 const WORKSPACE  = process.env.GITHUB_WORKSPACE || __dirname;
 const COULD_DIR  = path.join(WORKSPACE, 'could');
 const WOULD_DIR  = path.join(WORKSPACE, 'would');
-const CSV_PATH   = path.join(WOULD_DIR, 'skill-metric-v1.csv');
+const CSV_PATH   = path.join(WOULD_DIR, 'LOG-METRIC-V1.csv');
 const HEADERS    = 'date,category,type,headline\n';
 
 const CATEGORIES = ['migrate', 'price', 'recovery', 'usage', 'instruction', 'bug', 'analysis'];
@@ -27,7 +27,7 @@ function extractHeadline(filePath) {
     const anchor  = content.indexOf('####### <!-- ANCHOR MARKER');
     if (anchor === -1) return '';
     const after   = content.slice(anchor);
-    const match   = after.match(/^##\s+(?:ISSUE|ASSET):[^\n]+→\s*(.+)$/m);
+    const match   = after.match(/^##\s+(?:ISSUE|ASSET):[^\n]+â†’\s*(.+)$/m);
     return match ? match[1].trim() : '';
   } catch {
     return '';
@@ -52,7 +52,7 @@ function main() {
   }
 
   if (rows.length === 0) {
-    console.error('❌ No headlines found — skipping CSV update');
+    console.error('âŒ No headlines found â€” skipping CSV update');
     process.exit(1);
   }
 
@@ -65,7 +65,7 @@ function main() {
 
   const updated = existing + rows.join('');
   fs.writeFileSync(CSV_PATH, updated);
-  console.log(`✅ would/skill-metric-v1.csv — ${rows.length} rows appended (${date})`);
+  console.log(`âœ… would/LOG-METRIC-V1.csv â€” ${rows.length} rows appended (${date})`);
 }
 
 main();
