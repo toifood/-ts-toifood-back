@@ -10,7 +10,7 @@ const WOULD_DIR  = path.join(WORKSPACE, 'would');
 const CSV_PATH   = path.join(WOULD_DIR, 'log-asset-v1.csv');
 const HEADERS    = 'date,category,type,headline\n';
 
-const CATEGORIES = ['migrate', 'price', 'recovery', 'usage', 'instruction'];
+const CATEGORIES = ['migrate', 'price', 'recovery', 'usage', 'instruction', 'bug', 'analysis'];
 const TYPES      = ['issue', 'asset'];
 
 function nzDate() {

@@ -15,6 +15,10 @@ const files = {
   'would/USAGE-ASSET-V1.md':       process.env.USAGE_ASSET,
   'would/INSTRUCTION-ISSUE-V1.md': process.env.INSTRUCTION_ISSUE,
   'would/INSTRUCTION-ASSET-V1.md': process.env.INSTRUCTION_ASSET,
+  'would/BUG-ISSUE-V1.md':         process.env.BUG_ISSUE,
+  'would/BUG-ASSET-V1.md':         process.env.BUG_ASSET,
+  'would/ANALYSIS-ISSUE-V1.md':    process.env.ANALYSIS_ISSUE,
+  'would/ANALYSIS-ASSET-V1.md':    process.env.ANALYSIS_ASSET,
 };
 
 function api(method, path, body) {
