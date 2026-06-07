@@ -10,6 +10,14 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:ts-back 2026-06-07 17:30 → could/ and would/ split by file type
+
+| Directory | File types | Contents |
+|---|---|---|
+| `could/` | `.md` | 14 category analysis docs (MIGRATE/PRICE/RECOVERY/USAGE/INSTRUCTION/BUG/ANALYSIS × ISSUE/ASSET) |
+| `would/` | `.csv`, `.log` | `skill-metric-v1.csv` — weekly headline log |
+
+`would-update-csv.js` reads `.md` from `could/`, writes CSV to `would/`. Workflow `git add` targets `would/skill-metric-v1.csv`.
 ## ASSET:ts-back 2026-06-07 17:00 → output directory renamed would/ → could/
 
 All 14 category docs moved from `would/` to `could/`. JS files, workflow, and skill all updated to match. `could/log-asset-v1.csv` is the weekly CSV headline log path (file not yet committed — needs to be added).
