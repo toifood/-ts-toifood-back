@@ -10,6 +10,10 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:ts-back 2026-06-07 → pantry cap increased 30 → 50; PM2 restarted
+
+`PANTRY_CAP` in `src/routes/pantry.ts` updated from `30` to `50`. Build clean. PM2 restarted (`toifood-back` id 0).
+
 ## ISSUE:ts-back 2026-06-07 → 5 bugs fixed in ts-toifood-back (branch 1-1-1, commit 0c111be)
 
 Identified via `BUG-ISSUE-V1.md` skill output. All 6 reviewed; 5 fixed, 1 confirmed already handled.

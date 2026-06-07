@@ -10,6 +10,10 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:ts-back 2026-06-07 → pantry cap — 50 items
+
+`PANTRY_CAP = 50` in `src/routes/pantry.ts`. Returns `400 PANTRY_LIMIT_EXCEEDED` with `{ limit: 50, count }` when exceeded.
+
 ## ASSET:ts-back 2026-06-07 → bug fix reference — ts-toifood-back branch 1-1-1
 
 Fixes applied via BUG-ISSUE-V1 skill analysis. Build clean, pushed to `jayreck996/ts-toifood-back` branch `1-1-1`.
