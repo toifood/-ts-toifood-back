@@ -3,8 +3,22 @@ on:
   schedule:
     - cron: '0 6 * * 1'
   workflow_dispatch:
+    inputs:
+      quarter_override:
+        description: 'Override quarter (e.g. 2026Q3) for testing'
+        type: string
+        required: false
+
 jobs:
+  timing:
+    uses: toiflow/-toiflow/.github/workflows/must-update-timing.yml@main
+    secrets: inherit
+    with:
+      quarter_override: ${{ inputs.quarter_override }}
+      categories: ANALYSIS,BUG,INSTRUCTION,MIGRATE,PRICE,RECOVERY,USAGE
+
   update:
+    needs: timing
     runs-on: [self-hosted, mac-mini]
     steps:
       - uses: actions/checkout@v4
