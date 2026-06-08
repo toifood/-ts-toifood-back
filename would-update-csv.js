@@ -5,10 +5,17 @@
 const fs   = require('fs');
 const path = require('path');
 
+function getCurrentQuarter(override) {
+  if (override) return override;
+  const now = new Date();
+  return `${now.getFullYear()}Q${Math.ceil((now.getMonth() + 1) / 3)}`;
+}
+
+const QUARTER    = getCurrentQuarter(process.env.QUARTER_OVERRIDE);
 const WORKSPACE  = process.env.GITHUB_WORKSPACE || __dirname;
 const COULD_DIR  = path.join(WORKSPACE, 'could');
 const WOULD_DIR  = path.join(WORKSPACE, 'would');
-const CSV_PATH   = path.join(WOULD_DIR, 'LOG-METRIC-V1.csv');
+const CSV_PATH   = path.join(WOULD_DIR, `LOG-METRIC-${QUARTER}.csv`);
 const HEADERS    = 'date,category,type,headline\n';
 
 const CATEGORIES = ['migrate', 'price', 'recovery', 'usage', 'instruction', 'bug', 'analysis'];
@@ -45,7 +52,7 @@ function main() {
 
   for (const cat of CATEGORIES) {
     for (const type of TYPES) {
-      const file     = path.join(COULD_DIR, `${cat.toUpperCase()}-${type.toUpperCase()}-V1.md`);
+      const file     = path.join(COULD_DIR, `${cat.toUpperCase()}-${type.toUpperCase()}-${QUARTER}.md`);
       const headline = extractHeadline(file);
       if (headline) rows.push(toCsvRow(date, cat, type, headline));
     }
