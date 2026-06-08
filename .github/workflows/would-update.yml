@@ -9,6 +9,9 @@ on:
         type: string
         required: false
 
+permissions:
+  contents: write
+
 jobs:
   timing:
     uses: toiflow/-toiflow/.github/workflows/must-update-timing.yml@main
@@ -36,14 +39,17 @@ jobs:
       - name: Run would-update skill
         env:
           GH_TOKEN: ${{ secrets.TOIFOOD_CROSS_REPO_TOKEN }}
+          QUARTER_OVERRIDE: ${{ inputs.quarter_override }}
         run: claude --dangerously-skip-permissions --print "/would-update ts-back"
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
       - name: Update CSV log
+        env:
+          QUARTER_OVERRIDE: ${{ inputs.quarter_override }}
         run: |
           node would-update-csv.js
           git config user.name "would-update"
           git config user.email "admin@toigroup.co.nz"
-          git add would/skill-metric-v1.csv
+          git add would/
           git diff --cached --quiet || git commit -m "would-update: log $(date '+%Y-%m-%d')" && git push
