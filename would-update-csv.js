@@ -34,7 +34,7 @@ function extractHeadline(filePath) {
     const anchor  = content.indexOf('####### <!-- ANCHOR MARKER');
     if (anchor === -1) return '';
     const after   = content.slice(anchor);
-    const match   = after.match(/^##\s+(?:ISSUE|ASSET):[^\n]+â†’\s*(.+)$/m);
+    const match   = after.match(/^##\s+(?:ISSUE|ASSET):[^\n]+→\s*(.+)$/m);
     return match ? match[1].trim() : '';
   } catch {
     return '';
