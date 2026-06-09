@@ -10,6 +10,23 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:recovery {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:recovery 2026-06-09 18:03 → Three-state CookRecord lifecycle enables client-side session resume; Redis fail-open with warning preserves UX under infrastructure outage; OG image placeholder fallback in place
+
+**CookRecord as client recovery checkpoint:**
+- `GET /records` returns all in-progress (`STARTED`) sessions — mobile clients can detect an interrupted cook on next app launch and offer to resume or abandon. The three-state lifecycle (STARTED/COMPLETED/ABANDONED) is the data contract that enables this recovery UX without additional server logic.
+- Ownership check `{ id, userId: req.userId }` on PATCH routes prevents cross-user session manipulation during recovery flows.
+
+**Infrastructure fail-open strategy:**
+- Redis failure: rate limiter calls `next()` with a console warning — API remains available under Redis outage. Users experience no degradation; cost risk is the tradeoff.
+- OG image failure: falls back to pre-generated placeholder buffer (`initPlaceholder()`) — recipe saves succeed even when canvas fails. Recipes are never blocked by image generation failures.
+- Stats DB failure: `GET /stats` returns last-known cached values (60s in-memory TTL) — public-facing stat display never returns 500.
+
+**Process-level recovery:**
+- `pm2` auto-restarts the Node.js process on crash — Mac mini recovers from OOM or unhandled exception without manual intervention
+- `process.on('unhandledRejection')` and `process.on('uncaughtException')` both capture and log the error before pm2 triggers restart — stack traces preserved in pm2 logs for post-mortem
+
+**Auth resilience:**
+- Password reset and email verification tokens use `crypto.randomBytes(32)` — no predictable token sequences; secure even if an attacker observes timing of token creation
 ## ASSET:recovery 2026-06-07 16:30 → CookRecord status lifecycle (STARTED/COMPLETED/ABANDONED) enables partial session tracking; Redis retry strategy in place
 
 **CookRecord lifecycle:**
