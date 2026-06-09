@@ -10,6 +10,21 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:usage {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:usage 2026-06-09 18:03 → CookRecord JSON fields (ingredients/pantryItems/groceryItems) enable per-session ingredient analytics; Recipe.provider enables AI cost attribution; Redis quota state exposed to clients
+
+**Per-session ingredient data:**
+- Each CookRecord stores the full ingredient array split into pantryItems and groceryItems at time of cook — this enables future analytics like "average pantry utilisation rate" (pantryCount / ingredientCount) per user or cohort, which is a direct product health metric for the app's core value proposition.
+- `servings` override is recorded per session — allows comparison of recipe default servings vs. actual servings cooked, useful for recipe quality tuning.
+
+**AI cost attribution via Recipe.provider:**
+- `Recipe.provider` field (ollama / openai / claude) stored on every generated recipe — this is the foundation for any future cost breakdown analysis. Joining Recipe with CookRecord allows "total AI cost attributed to cooks" vs. "AI cost for abandoned recipes."
+
+**Redis quota transparency:**
+- `GET /recipes/usage` returns `{ollama: {used, max, ttl}, claude: {used, max, ttl}}` per authenticated user — the client can show a live usage gauge without polling. This reduces user confusion about why generation fails and lowers support burden.
+- Rolling 1-hour window counters mean quota resets predictably — no permanent quota exhaustion.
+
+**Store metrics available on demand:**
+- AppStore 30-day installs, sessions, active devices, crash rate; PlayStore 7-day crash/ANR rate — available at `GET /store-metrics` for admin users without requiring a separate analytics dashboard subscription.
 ## ASSET:usage 2026-06-07 16:30 → CookRecord now persists full cook session data (ingredients, pantry/grocery split, servings, status); AppStore + PlayStore metrics polling in place
 
 **CookRecord data model (new in 1-1-1):**
