@@ -10,6 +10,22 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:usage {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:usage 2026-06-09 18:03 → Cook session funnel invisible; insight acceptance rate untracked; no per-provider cost attribution from DB; UserFlowView step-drop data collected but never queried
+
+**Cook funnel not aggregated:**
+- `CookRecord` stores STARTED/COMPLETED/ABANDONED per session, but no route or job computes aggregate funnel stats (start→complete rate, avg session duration, most-abandoned recipes). The data is in DB but only accessible by raw SQL; there is no admin endpoint to surface it.
+
+**Insight acceptance untracked:**
+- `PATCH /insights/:id` accepts `action: "accept" | "dismiss"` but `UserInsight.acceptedAt` or a status field is not visible in the schema — it is unclear whether accept/dismiss is persisted at all, or just triggers some UI update. If insight acceptance is not stored, the ML feedback loop (which insights are useful) cannot be built.
+
+**AI provider cost attribution gap:**
+- `Recipe.provider` stores the AI provider per recipe. `CookRecord` links recipe to cook session. But there is no query that aggregates: "total recipes generated per provider per week per cohort." Cost-per-cohort analysis requires joining Recipe + User + CookRecord with a GROUP BY provider, which does not exist as an endpoint.
+
+**UserFlowView step-drop data unused:**
+- `UserFlowView.skippedSteps` (array) and `UserFlowView.responses` (JSON) are written on flow completion, but no admin or analytics endpoint queries them. Step-level drop-off rates (which onboarding step causes most users to skip) are derivable from this data but currently invisible.
+
+**Request logs not persisted:**
+- All HTTP request logs go to stdout only. pm2 rotates logs by default after a certain size. Historical usage trends (weekly active users, endpoint popularity, error rate over time) cannot be reconstructed once logs rotate.
 ## ISSUE:usage 2026-06-07 16:30 → CookRecord data collected but no aggregation endpoint; insight trigger unknown; storeMetrics data only via admin route
 
 **CookRecord analytics gap:**
