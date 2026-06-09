@@ -10,6 +10,11 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:ts-back 2026-06-09 → git diff as quarter-agnostic source of truth for content.js and csv.js
+
+`would-update-content.js` and `would-update-csv.js` now use `git diff --name-only HEAD -- could/` + `git ls-files --others` to find exactly what the skill wrote — no independent quarter recomputation. Quarter is derived from the filename itself (`\d{4}Q\d` pattern) only for naming the CSV. Works correctly across quarter boundaries and handles multi-quarter runs in one pass.
+
+**Role of `must-update-timing.yml` (job 0):** validates and pre-creates root `ISSUE-{QUARTER}.md`, `ASSET-{QUARTER}.md`, and `would/LOG-METRIC-{QUARTER}.csv` at quarter start. Does not touch `could/` category files — those are entirely owned by the skill.
 ## ASSET:ts-back 2026-06-09 → would-update pipeline architecture — node map and flow
 
 | Node | Tool | Reads from | Writes to | Knows categories? |

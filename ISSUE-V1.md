@@ -10,6 +10,9 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:ts-back 2026-06-09 → independent quarter recomputation in content.js / csv.js risked silent mismatch with skill
+
+`would-update-content.js` and `would-update-csv.js` independently computed `QUARTER` from date/override and filtered `could/*-{QUARTER}.md`. If the skill (running on mac-mini in NZST) computed a different quarter than the JS scripts — e.g. at a quarter boundary or timezone drift — the JS scripts would find no matching files and upload nothing. Silent failure with no error.
 ## ISSUE:ts-back 2026-06-09 → would-update-csv.js read from stale local files; would-read-md.js / would-update-md.js were legacy dead code
 
 **Stale CSV source:** `would-update-csv.js` read headlines from local `could/` files (checked-out repo state). After `would-update-content.js` writes via GitHub API, local files are not updated — CSV was extracting old headlines from the prior run. Fixed — see ASSET.
