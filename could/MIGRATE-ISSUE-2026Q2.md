@@ -10,6 +10,18 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:migrate {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:migrate 2026-06-09 18:03 → Concurrent recipe saves can trigger parallel UserInsight upserts; no retry on P2002 collision; manual cascade gaps accumulate with each new delete path
+
+**Concurrent upsert race on UserInsight:**
+- `runInsightAnalysis()` is called during recipe save flow. If two recipe saves complete simultaneously for the same user (e.g., batch import or retry), two parallel calls attempt `prisma.userInsight.upsert` on `@@unique([userId, category])`. Under Prisma with PostgreSQL, concurrent upserts on the same unique key can both reach the INSERT path before either updates — only one succeeds; the other throws P2002. There is no retry handler or idempotency guard in the insight service.
+
+**Insight analysis scope on every recipe save:**
+- `runInsightAnalysis()` generates insights across ALL categories (not just the category of the new recipe). On each recipe save, this means one AI call per insight category per user. For a user with 5 active insight categories, saving a recipe fires 5 AI calls — all trying to upsert into the same `@@unique([userId, category])` table simultaneously.
+
+**Growing manual cascade gap:**
+- As new models are added (CookRecord, UserInsight), the pattern of manually deleting some models in `DELETE /users/me` and relying on schema cascade for others is diverging. Currently `PasswordResetToken` and `EmailVerificationToken` are manually deleted; if a future developer adds a new model with `onDelete: Restrict` by mistake, user deletion silently fails with FK error. No schema audit step exists in the delete route.
+
+**Action needed:** Wrap insight upserts in a try/catch with P2002 retry or use a queued job. Audit all models for cascade vs. manual delete consistency and document the decision per-model.
 ## ISSUE:migrate 2026-06-07 16:30 → CookRecord and UserInsight models added in 1-1-1 with no documented migration path; ogImage Bytes column growing unbounded
 
 **New models since last analysis (1-1-1 branch):**
