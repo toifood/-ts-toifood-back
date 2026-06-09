@@ -10,6 +10,18 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:ts-back 2026-06-09 → would-update pipeline architecture — node map and flow
+
+| Node | Tool | Reads from | Writes to | Knows categories? |
+|---|---|---|---|---|
+| `would-read-md.js` | Node/JS | GitHub API (`toifood-dev/ts-toifood-back`) | `/tmp/would-read-content.txt` | No |
+| `would-update.md` (skill) | Claude | `/tmp/would-read-content.txt` + local `could/` | local `could/{CAT}-{TYPE}-{QUARTER}.md` | Yes — only node that does |
+| `would-update-content.js` | Node/JS | local `could/` (`*-{QUARTER}.md`) | GitHub API (`toifood/ts-back/could/`) | No — derives from filenames |
+| `would-update-csv.js` | Node/JS | local `could/` (reads headlines) | `would/LOG-METRIC-{QUARTER}.csv` → git commit | No — derives from filenames |
+
+**`/tmp/would-read-content.txt`:** codebase snapshot (README, package.json, schema.prisma, src/ tree) + per-category -MUST/ instructions. Read once by skill, held in context for all 14 analyses.
+
+**Key properties:** only the skill decides what categories exist. JS scripts are fully generic — derive categories from filenames. `could/` is the single handoff between Claude and Node.
 ## ASSET:ts-back 2026-06-09 → clean 4-way split: would-read-md / skill / would-update-content / would-update-csv
 
 **Pipeline (commits `-toifood` `2d60f15`, ts-back `0261cee`):**
