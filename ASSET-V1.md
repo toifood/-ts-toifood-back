@@ -10,6 +10,18 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:ts-back 2026-06-09 → clean 4-way split: would-read-md / skill / would-update-content / would-update-csv
+
+**Pipeline (commits `-toifood` `2d60f15`, ts-back `0261cee`):**
+
+| Step | File | Job |
+|---|---|---|
+| Read | `would-read-md.js` | Fetch latest branch zip, extract README/package.json/schema/src tree + -MUST/ instructions → `/tmp/would-source.txt` |
+| Analyse | `would-update.md` (skill) | Read `/tmp/would-source.txt`, generate 14 analyses → `/tmp/would-results/{cat}-{type}.txt` |
+| Write | `would-update-content.js` | Read temp files, `getOrCreate` + anchor insert → GitHub API |
+| Log | `would-update-csv.js` | Read temp files, extract headlines → `would/LOG-METRIC-{Q}.csv` → git commit |
+
+Claude only thinks — no fetching, no writing. Each component independently replaceable. Stale `could/` CSV bug eliminated — CSV now reads from `/tmp/would-results/` same as every other step.
 ## ASSET:ts-back 2026-06-09 → would-update split: Claude skill = read+analyze, would-update-content.js = write
 
 **Quarter fix shipped (`-toifood` commit `6ea7df4`):** `would-update.md` Step 0 now computes `$QUARTER` from `QUARTER_OVERRIDE` or current date — matching ts-anz/ts-inbox pattern. Next regular Monday run targets Q2 correctly.

@@ -10,6 +10,11 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:ts-back 2026-06-09 → would-update-csv.js read from stale local files; would-read-md.js / would-update-md.js were legacy dead code
+
+**Stale CSV source:** `would-update-csv.js` read headlines from local `could/` files (checked-out repo state). After `would-update-content.js` writes via GitHub API, local files are not updated — CSV was extracting old headlines from the prior run. Fixed — see ASSET.
+
+**Legacy files:** `would-read-md.js` read from a local `source/` directory (no longer exists) and output 14 prompts to `GITHUB_OUTPUT` — from the original pre-skill pipeline. `would-update-md.js` was a thin wrapper calling the Claude skill but never wired into the workflow. Both rewritten — see ASSET.
 ## ISSUE:ts-back 2026-06-09 → Q3 content written during Q2; hardcoded V1 suffixes in skill; must-update-timing.yml scaling concern
 
 **Q3 written in June:** A manual `workflow_dispatch` with `quarter_override: 2026Q3` ran 2026-06-08 05:23 UTC — initialised all Q3 template files and flipped the active write target to Q3. The subsequent weekly run wrote all codebase analysis into Q3 docs 3 weeks early. The `must-update-timing.yml` quarter logic itself is correct; cause was the override.
