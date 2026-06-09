@@ -9,7 +9,7 @@ const REPO_OWNER = 'toifood-dev';
 const REPO_NAME  = 'ts-toifood-back';
 const ZIP_PATH   = '/tmp/toifood-source.zip';
 const EXTRACT    = '/tmp/toifood-source';
-const OUT_PATH   = '/tmp/would-source.txt';
+const OUT_PATH   = '/tmp/would-read-content.txt';
 
 async function getLatestBranch() {
   const raw      = execSync(`gh api repos/${REPO_OWNER}/${REPO_NAME}/branches --jq '[.[].name]'`).toString();
