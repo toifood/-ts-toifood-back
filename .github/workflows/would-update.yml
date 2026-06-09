@@ -57,4 +57,5 @@ jobs:
           git config user.name "would-update"
           git config user.email "admin@toigroup.co.nz"
           git add would/
-          git diff --cached --quiet || git commit -m "would-update: log $(date '+%Y-%m-%d')" && git push
+          git diff --cached --quiet || git commit -m "would-update: log $(date '+%Y-%m-%d')"
+          git pull --rebase && git push
