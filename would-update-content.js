@@ -1,20 +1,15 @@
 #!/usr/bin/env node
-// would-update-content.js — upload local could/*-{QUARTER}.md files to GitHub API
+// would-update-content.js — upload skill-modified could/ files to GitHub API
+// Quarter-agnostic: uses git diff to find what the skill wrote, not recomputed quarter.
 
 const fs   = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const GITHUB_OWNER = 'toifood';
 const GITHUB_REPO  = 'ts-back';
 const WORKSPACE    = process.env.GITHUB_WORKSPACE || __dirname;
-const COULD_DIR    = path.join(WORKSPACE, 'could');
-
-function getCurrentQuarter(override) {
-  if (override) return override;
-  const now = new Date();
-  return `${now.getFullYear()}Q${Math.ceil((now.getMonth() + 1) / 3)}`;
-}
 
 async function githubGet(filePath) {
   const res = await fetch(
@@ -45,18 +40,17 @@ async function githubPut(filePath, sha, content, message) {
 async function main() {
   if (!GITHUB_TOKEN) throw new Error('GITHUB_TOKEN not set');
 
-  const QUARTER = getCurrentQuarter(process.env.QUARTER_OVERRIDE);
-  console.log(`Quarter: ${QUARTER}`);
+  const modified = execSync('git diff --name-only HEAD -- could/ && git ls-files --others --exclude-standard could/', { cwd: WORKSPACE })
+    .toString().trim().split('\n')
+    .filter(f => f.endsWith('.md') && f !== '');
 
-  const files = fs.readdirSync(COULD_DIR).filter(f => f.endsWith(`-${QUARTER}.md`));
-  if (files.length === 0) { console.error(`❌ No *-${QUARTER}.md files in could/`); process.exit(1); }
+  if (modified.length === 0) { console.warn('⚠  No changed could/ files — nothing to upload'); return; }
 
-  for (const filename of files) {
-    const content = fs.readFileSync(path.join(COULD_DIR, filename), 'utf8');
-    const ghPath  = `could/${filename}`;
+  for (const ghPath of modified) {
+    const content = fs.readFileSync(path.join(WORKSPACE, ghPath), 'utf8');
     let sha = null;
     try { sha = await githubGet(ghPath); } catch {}
-    await githubPut(ghPath, sha, content, `would-update: ${filename}`);
+    await githubPut(ghPath, sha, content, `would-update: ${ghPath}`);
     console.log(`✅ ${ghPath}`);
   }
 

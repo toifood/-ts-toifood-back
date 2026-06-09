@@ -1,19 +1,16 @@
 #!/usr/bin/env node
-// would-update-csv.js — extract headlines from local could/*-{QUARTER}.md and append to would/LOG-METRIC-{QUARTER}.csv
+// would-update-csv.js — extract headlines from skill-modified could/ files → would/LOG-METRIC-{QUARTER}.csv
+// Quarter-agnostic for reading: uses git diff to find what the skill wrote.
+// Quarter used only for CSV filename — derived from the modified files themselves.
 
-const fs  = require('fs');
+const fs   = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 const WORKSPACE = process.env.GITHUB_WORKSPACE || __dirname;
 const COULD_DIR = path.join(WORKSPACE, 'could');
 const WOULD_DIR = path.join(WORKSPACE, 'would');
 const HEADERS   = 'date,category,type,headline\n';
-
-function getCurrentQuarter(override) {
-  if (override) return override;
-  const now = new Date();
-  return `${now.getFullYear()}Q${Math.ceil((now.getMonth() + 1) / 3)}`;
-}
 
 function nzDate() {
   return new Intl.DateTimeFormat('en-CA', {
@@ -32,28 +29,46 @@ function extractHeadline(filePath) {
   } catch { return ''; }
 }
 
+function quarterFromFilename(filename) {
+  const match = filename.match(/(\d{4}Q\d)\.md$/);
+  return match ? match[1] : null;
+}
+
 function main() {
-  const QUARTER  = getCurrentQuarter(process.env.QUARTER_OVERRIDE);
-  const CSV_PATH = path.join(WOULD_DIR, `LOG-METRIC-${QUARTER}.csv`);
-  const date     = nzDate();
-  const rows     = [];
+  const modified = execSync('git diff --name-only HEAD -- could/ && git ls-files --others --exclude-standard could/', { cwd: WORKSPACE })
+    .toString().trim().split('\n')
+    .filter(f => f.endsWith('.md') && f !== '');
 
-  const files = fs.readdirSync(COULD_DIR).filter(f => f.endsWith(`-${QUARTER}.md`));
+  if (modified.length === 0) { console.warn('⚠  No changed could/ files — skipping CSV'); return; }
 
-  for (const filename of files) {
-    const parts    = filename.replace(`-${QUARTER}.md`, '').toLowerCase().split('-');
-    const type     = parts.pop();
-    const cat      = parts.join('-');
-    const headline = extractHeadline(path.join(COULD_DIR, filename));
-    if (headline) rows.push(`${date},${cat},${type},"${headline.replace(/"/g, '""')}"\n`);
+  const date  = nzDate();
+  const byQuarter = {};
+
+  for (const ghPath of modified) {
+    const filename = path.basename(ghPath);
+    const quarter  = quarterFromFilename(filename);
+    if (!quarter) continue;
+
+    const parts   = filename.replace(`-${quarter}.md`, '').toLowerCase().split('-');
+    const type    = parts.pop();
+    const cat     = parts.join('-');
+    const headline = extractHeadline(path.join(WORKSPACE, ghPath));
+    if (!headline) continue;
+
+    if (!byQuarter[quarter]) byQuarter[quarter] = [];
+    byQuarter[quarter].push(`${date},${cat},${type},"${headline.replace(/"/g, '""')}"\n`);
   }
 
-  if (rows.length === 0) { console.error('❌ No headlines found — skipping CSV'); process.exit(1); }
+  if (Object.keys(byQuarter).length === 0) { console.error('❌ No headlines found — skipping CSV'); process.exit(1); }
 
   fs.mkdirSync(WOULD_DIR, { recursive: true });
-  const existing = fs.existsSync(CSV_PATH) ? fs.readFileSync(CSV_PATH, 'utf8') : HEADERS;
-  fs.writeFileSync(CSV_PATH, existing + rows.join(''));
-  console.log(`✅ ${CSV_PATH} — ${rows.length} rows (${date})`);
+
+  for (const [quarter, rows] of Object.entries(byQuarter)) {
+    const CSV_PATH = path.join(WOULD_DIR, `LOG-METRIC-${quarter}.csv`);
+    const existing = fs.existsSync(CSV_PATH) ? fs.readFileSync(CSV_PATH, 'utf8') : HEADERS;
+    fs.writeFileSync(CSV_PATH, existing + rows.join(''));
+    console.log(`✅ ${CSV_PATH} — ${rows.length} rows (${date})`);
+  }
 }
 
 main();
