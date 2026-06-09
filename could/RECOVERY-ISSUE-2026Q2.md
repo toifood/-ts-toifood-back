@@ -10,6 +10,21 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:recovery {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:recovery 2026-06-09 18:03 → No staleness recovery for STARTED cook records; expired auth tokens accumulate without cleanup; pm2 restart loses in-flight AI generation requests
+
+**Stale STARTED records accumulate without expiry:**
+- `POST /records/start` creates a CookRecord in `STARTED` state with no TTL or expiry timestamp. Records stay `STARTED` indefinitely if the app crashes, the phone loses connectivity, or the user force-quits. As of now there is no background job to mark sessions as `ABANDONED` after N hours of inactivity. Over time, stale `STARTED` records will skew metrics (e.g., cooking completion rate appears lower than reality).
+
+**Expired token accumulation:**
+- `PasswordResetToken` (1-hour expiry) and `EmailVerificationToken` (24-hour expiry) are never purged from the database. There is no `DELETE WHERE expiresAt < NOW()` scheduled job. On a high-signup system, these tables grow unboundedly.
+
+**pm2 restart drops in-flight AI generation:**
+- If pm2 restarts the process mid-recipe-generation (e.g. after a Mac mini OS update or manual restart), the AI provider call is abandoned. The user's client receives a connection reset. The recipe is not saved. There is no request retry queue or job persistence — the generation is silently lost. The user must retry manually with no indication of what happened.
+
+**Email send failure creates partial state:**
+- `sendVerificationEmail` is awaited directly in the register route. If the email service (SMTP or transactional provider) is down, the user account IS created in the DB but the request returns 500 with no email sent. The user cannot verify their email and has no way to retry without a new registration.
+
+**Action needed:** Add `startedAt` + cleanup job for stale STARTED records after 4+ hours. Add periodic `DELETE WHERE expiresAt < NOW()` for token tables. Use a job queue for AI generation so restarts can resume. Wrap email send in try/catch returning 200 with `emailPending: false` flag.
 ## ISSUE:recovery 2026-06-07 16:30 → CookRecord session can be started but never completed/abandoned; OG image canvas failure crashes recipe save silently; YouTube fetch has no timeout
 
 **Orphan CookRecord sessions:**
