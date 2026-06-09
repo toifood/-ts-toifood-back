@@ -10,6 +10,18 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:usage {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:usage 2026-06-09 18:16 → CookStatus funnel data is the foundation for completion-rate analytics; Recipe.provider + CookRecord join enables full AI cost-to-cook attribution; error code field on all responses enables client-side telemetry segmentation
+
+**CookStatus funnel as product health signal:**
+- Every cook session has a terminal state: COMPLETED or ABANDONED. `CookRecord` rows are the raw data for the core product metric — recipe-to-cook conversion rate. The data model is already in place; only an aggregation endpoint (or a periodic SQL query in digest.ts) is needed to surface it.
+- `CookRecord.pantryCount` / `CookRecord.ingredientCount` ratio is the direct indicator of the app's pantry-awareness value: what fraction of recipe ingredients users already own. This is a differentiating metric unique to this app's value proposition.
+
+**Structured error codes enable client-side telemetry:**
+- All error responses include a `code` field (30+ distinct values across 8 routes). Mobile clients can log these codes to their own analytics pipeline (e.g., Amplitude, Mixpanel) to build a structured error-rate breakdown by code without needing server-side changes. This decouples error observability from server log availability.
+
+**AppStore/PlayStore metrics as crash proxy:**
+- `GET /store-metrics` returns 30-day crash rate (AppStore) and 7-day crash/ANR rate (PlayStore). These are lagging indicators of backend-induced crashes visible before any user complaint reaches support. Admin monitoring of this endpoint can catch regressions introduced by backend deployments within days.
+
 ## ASSET:usage 2026-06-09 18:03 → CookRecord JSON fields (ingredients/pantryItems/groceryItems) enable per-session ingredient analytics; Recipe.provider enables AI cost attribution; Redis quota state exposed to clients
 
 **Per-session ingredient data:**

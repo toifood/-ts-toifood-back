@@ -10,6 +10,26 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:instruction {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:instruction 2026-06-09 18:16 → src/routes/chat.ts is production-mounted with no documentation, no auth specification, and unknown AI cost profile; digest.ts and slack-bot.ts have no startup instructions or pm2 config entries in any doc
+
+**chat route is a documentation black hole:**
+- `src/routes/chat.ts` is mounted in `src/index.ts` and is serving in production, but:
+  - README makes no mention of it
+  - It is unknown whether it requires authentication or is open to unauthenticated callers
+  - It is unknown whether it calls an AI provider (and therefore incurs cost per request)
+  - It is unknown whether it is rate-limited
+  - No endpoint spec exists for it in any doc file
+- A new developer or security reviewer cannot assess the attack surface of this route without reading the source. An unauthenticated AI-calling chat endpoint would be a direct cost runaway vector.
+
+**digest.ts and slack-bot.ts have no operational documentation:**
+- Neither process is mentioned in `docs/macmini-deployment.md` or README. There are no instructions for:
+  - How to start them (direct node? pm2? cron?)
+  - Whether they should run on the Mac mini alongside the main API or separately
+  - What environment variables they require
+  - How to monitor if they are running
+  - How to restart them after a Mac mini reboot
+- An operator doing a fresh Mac mini setup from docs would not start these processes, silently losing digest summaries and Slack bot functionality.
+
 ## ISSUE:instruction 2026-06-09 18:03 → No documented deprecation timeline for unversioned paths; UserRole promotion undocumented; no runbook for Redis or Ollama outage; insight category list not exposed
 
 **No deprecation timeline for legacy routes:**

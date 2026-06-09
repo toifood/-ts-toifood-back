@@ -10,6 +10,18 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:instruction {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:instruction 2026-06-09 18:16 → One-file-per-domain route structure makes any endpoint locatable by filename; env var table and deployment guide cover the happy path; CHANGELOG.md provides a human-readable release history
+
+**Predictable route location by filename:**
+- `src/routes/` contains one file per domain entity: `recipes.ts`, `auth.ts`, `users.ts`, `pantry.ts`, `lists.ts`, `records.ts`, `insights.ts`, `flows.ts`, `admin.ts`, `chat.ts`. Any endpoint is locatable by reading the filename — no route map, no controller index, no grep required. This is the most valuable structural documentation property for onboarding a new developer.
+
+**Happy-path deployment fully documented:**
+- `docs/macmini-deployment.md` covers the complete Mac mini M4 setup: PostgreSQL, Redis, Ollama, pm2, env vars, `prisma migrate deploy`, and pm2 start command. A developer starting from scratch has a complete checklist for the primary deployment target.
+- `docs/openclaw-integration.md` explains the Ollama local AI model integration — including model name (`qwen2.5:7b`) and the URL the API expects (`http://127.0.0.1:11434`).
+
+**CHANGELOG.md as a release reference:**
+- `CHANGELOG.md` is tracked in the repo — version history is available alongside the code rather than in a separate wiki. This is a low-cost asset for understanding what changed between versions without reading git log.
+
 ## ASSET:instruction 2026-06-09 18:03 → Shared TypeScript types provide implicit API contract; /health + /app-config enable client-side resilience; docs/ folder contains deployment and AI integration guides
 
 **Shared TypeScript types as living API contract:**

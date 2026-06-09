@@ -10,6 +10,18 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:usage {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:usage 2026-06-09 18:16 → digest.ts is the primary usage-review mechanism but its data queries and output format are invisible to this tracking system; Slack alerts are ad-hoc strings with no structured event taxonomy
+
+**digest.ts as a black-box usage channel:**
+- `src/digest.ts` is a separate process that generates periodic operational summaries, likely sent to Slack via `chatAlert()`. The data it queries (user counts, recipe counts, error rates), the aggregation window, and the output format are entirely undocumented. If the product owner's primary view into weekly usage is this digest, decisions are being made on an ad-hoc Slack message that has no retention, no searchability, and no versioned format.
+- If digest is renamed, refactored, or crashes silently (no pm2 supervision), usage visibility disappears with no alert.
+
+**chatAlert() event taxonomy is unstructured:**
+- `chatAlert()` is called from multiple callsites (Apple auth failure, recipe generation error, likely digest summaries) with free-form message strings. There is no event taxonomy, no `event_type` field, and no Slack channel routing by severity or category. As call sites multiply, Slack becomes noisy without structured filtering. Automated alerting rules cannot be built on regex-matched free text.
+
+**Historical usage irrecoverable after log rotation:**
+- pm2 default log rotation discards logs after they reach a size threshold. Console request logs (`[req] METHOD PATH STATUS DURATIONms userId=X`) are the only persistent telemetry — once rotated, weekly active users, endpoint hit rates, and error rates for any previous time window are unrecoverable. No log export to a queryable sink (Datadog, Loki, CloudWatch) exists.
+
 ## ISSUE:usage 2026-06-09 18:03 → Cook session funnel invisible; insight acceptance rate untracked; no per-provider cost attribution from DB; UserFlowView step-drop data collected but never queried
 
 **Cook funnel not aggregated:**

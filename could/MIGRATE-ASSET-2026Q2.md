@@ -10,6 +10,20 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:migrate {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:migrate 2026-06-09 18:16 → @@unique constraints on three models provide DB-level idempotency; all 13 models have explicit onDelete directives; enum-only schema additions are zero-downtime safe
+
+**DB-level idempotency guards:**
+- `PantryItem @@unique([userId, ingredient])` — duplicate pantry entries fail at the DB layer with P2002, not at the application layer; consistent regardless of how many insert paths exist
+- `RecipeReview @@unique([userId, recipeId])` — one review per recipe per user is enforced without application-layer coordination
+- `UserInsight @@unique([userId, category])` — single active insight per category guaranteed at the DB level; upsert semantics are safe to retry as long as P2002 is caught
+
+**Explicit onDelete on all foreign keys:**
+- Every FK in the 13-model schema has an explicit `onDelete` directive (Cascade or Restrict) — no Prisma defaults are relied upon. This means schema intent is visible in `schema.prisma` without checking Prisma version behaviour.
+- The three models that use manual delete (`DietaryPreference`, `PasswordResetToken`, `EmailVerificationToken`) are documented in `DELETE /users/me` — the decision is intentional and visible.
+
+**Zero-downtime enum extension:**
+- `CookStatus`, `UserRole`, `FlowTrigger`, `FlowStepType` — all current values are stable; no renames or removals. Adding a new enum value (e.g., `PAUSED` to CookStatus) requires only a Prisma migration with no backfill, making it safe to apply with zero application downtime.
+
 ## ASSET:migrate 2026-06-09 18:03 → Prisma migrations folder confirmed present; CookRecord + UserInsight cascade cleanly from User; PantryItem deduplication enforced at DB level
 
 **Migration infrastructure:**

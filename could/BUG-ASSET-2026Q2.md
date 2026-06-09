@@ -10,6 +10,17 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:bug {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:bug 2026-06-09 18:16 → UUID-based resource IDs make enumeration attacks impractical; JSON body parser returns 400 on malformed input before any handler runs; length-capped text fields prevent DB column overflow
+
+**UUID resource IDs close enumeration attack surface:**
+- All primary keys are UUIDs, not sequential integers. Guessing a valid recipe, list, or user ID requires enumerating 128 bits of entropy rather than incrementing a counter. Combined with the `{ id, userId: req.userId }` ownership check on every mutable route, an attacker must know both a valid UUID and own the resource — making IDOR attacks impractical without account compromise.
+
+**JSON body parser as a first-line defence:**
+- `express.json()` is the first middleware in the stack — malformed JSON (truncated payloads, invalid escapes, oversized arrays) returns 400 before any route handler runs. Route handlers never see partially-parsed request bodies, eliminating a class of null-dereference bugs in route-level parsing code.
+
+**Text field length caps prevent column overflow:**
+- All user-supplied text fields have explicit length limits enforced in route handlers: email ≤ 100, name ≤ 50, password 8–128, ingredient trimmed. PostgreSQL `varchar` columns without a constraint would accept arbitrarily long strings; these application-layer caps prevent both DB column overflow and storage-amplification attacks where a single malicious request writes megabytes to the DB.
+
 ## ASSET:bug 2026-06-09 18:03 → Prisma P2002 catch pattern established for pantry dedup; enum validation at boundaries prevents garbage data; bcrypt/12 + JWT ensure auth bug surface is small
 
 **P2002 catch pattern for idempotent inserts:**

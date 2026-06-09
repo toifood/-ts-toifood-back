@@ -10,6 +10,20 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:recovery {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:recovery 2026-06-09 18:16 → Fail-open strategy is consistent across all three infrastructure dependencies (Redis, DB stats, canvas); auth token generation uses cryptographically secure random bytes; pm2 preserves stack traces for post-mortem
+
+**Consistent fail-open design across dependencies:**
+- Redis failure → rate limiter calls `next()` with `console.warn` — API stays available; UX unaffected
+- DB failure on `GET /stats` → 60s in-memory stale cache is served — public stats never return 500
+- Canvas failure on OG image → pre-generated placeholder buffer served — recipe save succeeds; image degrades gracefully
+- This consistent pattern means the Mac mini M4 can tolerate any single infrastructure failure without a complete API outage.
+
+**Cryptographically secure token generation:**
+- `PasswordResetToken` and `EmailVerificationToken` both use `crypto.randomBytes(32)` — no predictable token sequence even if generation timestamps are known. Token entropy is 256 bits, making brute-force infeasible even with DB access.
+
+**pm2 log preservation for post-mortem:**
+- `process.on('unhandledRejection')` and `process.on('uncaughtException')` log the full error and stack before pm2 triggers restart. pm2 persists these logs to disk — stack traces from a crash are available for post-mortem even after the process has restarted and resumed serving requests.
+
 ## ASSET:recovery 2026-06-09 18:03 → Three-state CookRecord lifecycle enables client-side session resume; Redis fail-open with warning preserves UX under infrastructure outage; OG image placeholder fallback in place
 
 **CookRecord as client recovery checkpoint:**

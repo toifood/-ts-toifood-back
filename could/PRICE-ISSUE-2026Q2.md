@@ -10,6 +10,18 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:price {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:price 2026-06-09 18:16 → digest.ts and slack-bot.ts are unmetered auxiliary processes; heavy DB aggregation queries in digest compete with user traffic on single-node PostgreSQL; no read-replica strategy
+
+**Auxiliary processes outside cost and query budgets:**
+- `src/digest.ts` is a separate Node.js process that runs on a schedule (likely cron or setInterval). Its queries are not metered, rate-limited, or accounted for in any cost tracking. If it computes aggregate stats (`GROUP BY`, `COUNT(*)` on recipes, cook records, or users), it performs full table scans on the same single-node PostgreSQL instance serving user-facing API requests. No read-replica strategy exists.
+- `src/slack-bot.ts` is another separate process that likely responds to Slack commands. If any Slack command triggers an AI provider call (e.g., "generate a test recipe"), that call is outside the rate-limit system entirely — no `ratelimit:{userId}:{provider}` key is checked.
+- Neither process has documented query budgets, timeouts, or connection pool sizing. Three Node.js processes (main API + digest + slack-bot) share the same PostgreSQL instance with default Prisma connection pools — total connection count is `3 × pool_size` with no configured limit.
+
+**Token cost of digest AI calls:**
+- If `digest.ts` generates a periodic Slack summary using an AI provider (e.g., summarising recipe trends), it uses Claude/OpenAI tokens with no `max_tokens` cap and no logging of token usage. These calls are invisible to the cost tracking system.
+
+**Action needed:** Document the digest.ts query schedule and SQL profile. Set explicit Prisma `connection_limit` per process. If digest makes AI calls, add token usage logging. Gate slack-bot AI commands behind the same rate-limit middleware as the API.
+
 ## ISSUE:price 2026-06-09 18:03 → Recipe save triggers up to N×AI insight calls (one per category) outside rate limit scope; no per-call cost cap on OpenAI/Claude; store metrics polling unbounded
 
 **Cost multiplication via insight pipeline:**

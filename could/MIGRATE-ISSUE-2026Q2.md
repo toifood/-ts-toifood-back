@@ -10,6 +10,18 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:migrate {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:migrate 2026-06-09 18:16 → JSON column format versioning absent across four models; profileVisibility and FlowStep.content have no schema enforcement; onboarding response data locked in unqueryable JSON blobs
+
+**Unversioned JSON shapes in four models:**
+- `FlowStep.content` (JSON) — stores onboarding step configuration including type-specific fields (preferences step vs. tip step). If the flow editor changes the content schema (new keys, renamed keys), existing `UserFlowView.responses` rows hold data in the old format. There is no migration script, version field, or discriminator to distinguish old vs. new response shapes. Parsing logic that expects the new shape will produce silent `undefined` on old rows.
+- `UserFlowView.responses` (JSON) — captures per-step user responses keyed to step order or step ID. Any change to step numbering or ID scheme in `FlowStep` invalidates historical response keys with no detectable error.
+- `User.profileVisibility` (JSON) — stores display preference flags with no Prisma validator or Zod schema. Unknown keys silently persist and stale keys silently remain after a feature removal.
+- `Recipe.ogImage` (Bytes) — not a JSON column but has the same unbounded growth problem: no row-level size cap, no S3 archival trigger, and no migration to move existing blobs out of PostgreSQL into object storage.
+
+**No JSON migration strategy:**
+- Prisma has no native `jsonb_set` migration helper. Format changes require a standalone data migration script that must be written, tested, and run manually — none is present in the repo for any of these columns.
+- Recommendation: Add a `schemaVersion` field to `FlowStep.content` and `UserFlowView.responses`, and validate shape at read time with a Zod parser that returns a typed default for unknown versions.
+
 ## ISSUE:migrate 2026-06-09 18:03 → Concurrent recipe saves can trigger parallel UserInsight upserts; no retry on P2002 collision; manual cascade gaps accumulate with each new delete path
 
 **Concurrent upsert race on UserInsight:**

@@ -10,6 +10,17 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:analysis {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:analysis 2026-06-09 18:16 → Express middleware stack is minimal and explicit; no framework magic; Prisma-generated types make DB schema the single source of truth; ownership-guard pattern is applied uniformly across all mutable routes
+
+**Explicit, readable middleware stack:**
+- The Express middleware chain in `src/index.ts` is short and explicit: CORS → JSON body parser → request logger → routes. There is no hidden middleware injected by a framework, no auto-discovery, no decorator-based registration. Any developer reading `src/index.ts` top-to-bottom sees exactly what executes on every request, in order. This makes debugging request-level issues straightforward.
+
+**Prisma schema as single source of truth:**
+- `prisma/schema.prisma` is the authoritative definition of the data model. Prisma-generated TypeScript types flow into all route handlers via `@prisma/client` — there is no separate model layer, no manual type-to-table mapping, and no ORM configuration file. Adding a column to the schema automatically makes it available and typed throughout the application after `prisma generate`. The data model and the types are structurally in sync by construction.
+
+**Uniform ownership-guard pattern:**
+- Every route that mutates user-owned data (`recipes`, `lists`, `pantry`, `records`, `insights`) uses the same `{ id, userId: req.userId! }` where-clause pattern. The consistency of this pattern means ownership enforcement is auditable by grep: any route that queries by id alone is immediately identifiable as a potential IDOR risk. This regularity is a meaningful security asset — it is not accidental.
+
 ## ASSET:analysis 2026-06-09 18:03 → Codebase is ~2000 LOC across ~20 files; TypeScript strict typing throughout; domain-aligned route structure; operational tooling (pm2, Slack, Redis, health) production-ready for current scale
 
 **Codebase size and shape:**

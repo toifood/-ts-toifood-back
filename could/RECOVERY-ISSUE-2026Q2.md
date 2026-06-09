@@ -10,6 +10,18 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:recovery {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:recovery 2026-06-09 18:16 → digest.ts and slack-bot.ts have no pm2 supervision; in-flight canvas OG image render is non-resumable on pm2 restart; chatAlert() not called on process-level crashes
+
+**Auxiliary processes unsupervised:**
+- `src/digest.ts` and `src/slack-bot.ts` are separate Node.js processes but only the main API (`toifood-back`) is documented in pm2 configuration. If digest or slack-bot crash (unhandled exception, OOM, network error), they are not restarted automatically — the outage is silent until manually discovered. No `chatAlert()` fires on auxiliary process failure.
+- Both processes share the PostgreSQL and Redis instances with the main API. A crash loop in digest (e.g., a malformed query timing out repeatedly) could exhaust DB connections before pm2 can notice the main API process needs them.
+
+**In-flight OG image non-resumable on restart:**
+- Canvas OG image generation (`@napi-rs/canvas`) runs synchronously in the recipe save request handler. If pm2 restarts the process mid-render (e.g., after an OS update or memory pressure event), the render is killed. The recipe row may already be committed to the DB (if the save happens before the render), but `ogImage` will be null with no retry mechanism and no Slack alert. The user's recipe exists but has a broken image permanently.
+
+**Process-level crashes not Slack-alerted:**
+- `process.on('unhandledRejection')` and `process.on('uncaughtException')` in `src/index.ts` log to console only — `chatAlert()` is not called. On a Mac mini with pm2 managing the process, a crash and auto-restart cycle is invisible until someone checks pm2 logs manually. The window between crash and discovery is unbounded.
+
 ## ISSUE:recovery 2026-06-09 18:03 → No staleness recovery for STARTED cook records; expired auth tokens accumulate without cleanup; pm2 restart loses in-flight AI generation requests
 
 **Stale STARTED records accumulate without expiry:**

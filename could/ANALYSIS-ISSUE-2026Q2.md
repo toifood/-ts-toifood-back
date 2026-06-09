@@ -10,6 +10,17 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:analysis {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:analysis 2026-06-09 18:16 → Three Node.js processes (API + digest + slack-bot) share one PostgreSQL instance with unconfigured connection pools; no test suite means every deploy is production-first validation; shared router instances undermine API versioning
+
+**Multi-process PostgreSQL connection pool contention:**
+- `src/index.ts` (main API), `src/digest.ts`, and `src/slack-bot.ts` each instantiate their own `PrismaClient` with no explicit `connection_limit`. Prisma's default connection pool is `min(num_cpus * 2 + 1, 10)` per client instance. Three processes on the same Mac mini M4 (8 CPUs) each holding up to 17 connections = up to 51 concurrent connections to one PostgreSQL instance. Under simultaneous digest cron execution + active user traffic + slack-bot DB queries, this pool contention will surface as `P2024` (connection pool timeout) errors before the Mac mini saturates CPU or RAM.
+
+**Zero tests = production is the test environment:**
+- No test suite exists (no test files, no test runner config, no CI test step). Every code change — including the 5 bug fixes in the 1-1-1 round — was validated entirely by running in production and observing behaviour or user reports. There is no regression harness. A new developer fixing one bug cannot verify they haven't introduced another. This is the single largest architectural risk for the codebase at any scale.
+
+**Shared router instances make versioning illusory:**
+- Both `/api/recipes` and `/1-1-1/api/recipes` mount the same `router` instance from `src/routes/recipes.ts`. A bug fix in recipes.ts changes the behaviour of both the versioned and unversioned paths simultaneously. The versioning prefix communicates API stability to clients but provides no actual isolation — it is a naming convention, not an architectural boundary.
+
 ## ISSUE:analysis 2026-06-09 18:03 → Synchronous CPU work in request path (canvas OG image, pluralStem matching) blocks event loop; no correlation IDs; recipes.ts doing too many jobs; AI service has no circuit breaker
 
 **Synchronous CPU work blocks the event loop:**

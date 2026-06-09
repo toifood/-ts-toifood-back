@@ -10,6 +10,18 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:price {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:price 2026-06-09 18:16 → Provider isolation via AI_PROVIDER env var prevents accidental paid-tier usage in dev; AppStore ES256 JWT is short-lived; role-tier limits are in-memory constants with no DB round-trip
+
+**Provider isolation at runtime:**
+- `AI_PROVIDER` env var selects the backend at process startup — switching from Ollama to Claude or OpenAI requires an explicit env change and pm2 restart, not an API call. This means dev environments running without `AI_PROVIDER` set default to free Ollama automatically, preventing accidental charged API usage in development or test runs.
+
+**No DB round-trip for tier enforcement:**
+- Rate limit tier values (`free: 3 ollama / 2 claude`, `premium: 10 / 5`, `admin: unlimited`) are stored as in-code constants, not DB rows. Each rate-limit check reads the user's role from the JWT payload (already in memory) and the Redis counter — no `SELECT` on the users table per request. This keeps the quota enforcement path fast and immune to DB latency spikes.
+
+**AppStore credential safety:**
+- App Store Connect API uses ES256 JWTs with a 20-minute expiry, generated fresh per request from the private key env var. No long-lived token is stored in memory or DB — credential theft window is limited to the 20-minute JWT lifetime.
+- `PLAY_SERVICE_ACCOUNT_JSON` loaded from env var at startup; if absent, the PlayStore service returns `null` gracefully — no crash or 500 on unconfigured environments.
+
 ## ASSET:price 2026-06-09 18:03 → Ollama (qwen2.5:7b) as zero-cost default carries 100% of free-tier load; Redis rate limit counters expose live quota state to clients; isPremium computed server-side
 
 **Cost-free default path:**
