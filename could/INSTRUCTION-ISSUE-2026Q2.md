@@ -10,6 +10,20 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:instruction {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:instruction 2026-06-09 18:03 → No documented deprecation timeline for unversioned paths; UserRole promotion undocumented; no runbook for Redis or Ollama outage; insight category list not exposed
+
+**No deprecation timeline for legacy routes:**
+- Both `/api/recipes` (unversioned) and `/1-1-1/api/recipes` (versioned) are mounted and functional. The comment in `src/index.ts` says legacy paths will eventually be deprecated, but no date is set, no deprecation header is returned, and mobile clients have no way to discover they are using a legacy path. If the API is shared externally, removing unversioned routes will silently break consumers.
+
+**UserRole promotion process undocumented:**
+- `UserRole` (free/premium/admin) controls rate limits and feature access, but there is no endpoint to upgrade a user's role. Only direct DB edit (`UPDATE users SET role = 'premium' WHERE id = X`) or an undocumented admin API can promote users. No runbook, no README section, no internal doc describes this.
+
+**No runbooks for critical dependencies:**
+- Redis outage: rate limiting silently disabled — no documented response procedure for detecting this, no Slack alert fires. An operator discovering unexpectedly high AI costs has no documented checklist to correlate with a Redis outage.
+- Ollama (`qwen2.5:7b`) outage: no documented fallback instruction. If the local model goes down on the Mac mini, all free-tier recipe generation silently fails with a 500. No runbook tells the operator to switch `AI_PROVIDER=openai` temporarily.
+
+**Insight categories not enumerated in API:**
+- `UserInsight.category` is a free-form string in the schema. There is no enum, no `GET /insights/categories` endpoint, and no documentation of which categories the AI generates. Mobile clients have no way to display category labels without hardcoding them, creating a coupling that breaks when new categories are added.
 ## ISSUE:instruction 2026-06-07 16:30 → New 1-1-1 versioned route prefix undocumented; CookRecords, Insights, StoreMetrics, Chat endpoints absent from README; shared types not mentioned
 
 **Versioned routing undocumented:**
