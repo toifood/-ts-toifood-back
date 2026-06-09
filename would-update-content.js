@@ -1,50 +1,14 @@
 #!/usr/bin/env node
-// would-update-content.js — read skill analysis from /tmp/would-results/ and write to could/ docs
-// Usage: GITHUB_TOKEN=... [QUARTER_OVERRIDE=2026Q3] node would-update-content.js
+// would-update-content.js — upload local could/*-{QUARTER}.md files to GitHub API
 
-const fs = require('fs');
+const fs   = require('fs');
 const path = require('path');
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const GITHUB_OWNER = 'toifood';
 const GITHUB_REPO  = 'ts-back';
-const RESULTS_DIR  = '/tmp/would-results';
-
-const CATEGORIES = ['migrate', 'price', 'recovery', 'usage', 'instruction', 'bug', 'analysis'];
-const TYPES      = ['issue', 'asset'];
-
-const ISSUE_ANCHOR = '####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->';
-const ASSET_ANCHOR = '####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->';
-
-const ISSUE_HEADER = [
-  'ISSUE LOG',
-  'INSTRUCTION FOR AI MODEL:',
-  '',
-  'ALWAYS ADD NEW ISSUE ENTRIES AT THE TOP, DIRECTLY BELOW THIS HEADER.',
-  '',
-  'NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES.',
-  '',
-  'REQUIRED FORMAT FOR EACH ISSUE ENTRY:',
-  '',
-  '## ISSUE:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}',
-  '',
-  ISSUE_ANCHOR
-].join('\n');
-
-const ASSET_HEADER = [
-  'ASSET LOG',
-  'INSTRUCTION FOR AI MODEL:',
-  '',
-  'ALWAYS ADD NEW ASSET ENTRIES AT THE TOP, DIRECTLY BELOW THIS HEADER.',
-  '',
-  'NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES.',
-  '',
-  'REQUIRED FORMAT FOR EACH ASSET ENTRY:',
-  '',
-  '## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}',
-  '',
-  ASSET_ANCHOR
-].join('\n');
+const WORKSPACE    = process.env.GITHUB_WORKSPACE || __dirname;
+const COULD_DIR    = path.join(WORKSPACE, 'could');
 
 function getCurrentQuarter(override) {
   if (override) return override;
@@ -58,8 +22,7 @@ async function githubGet(filePath) {
     { headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, Accept: 'application/vnd.github+json' } }
   );
   if (!res.ok) throw new Error(`GET ${filePath}: ${res.status}`);
-  const data = await res.json();
-  return { sha: data.sha, content: Buffer.from(data.content, 'base64').toString('utf8') };
+  return (await res.json()).sha;
 }
 
 async function githubPut(filePath, sha, content, message) {
@@ -77,23 +40,6 @@ async function githubPut(filePath, sha, content, message) {
     }
   );
   if (!res.ok) throw new Error(`PUT ${filePath}: ${res.status} ${await res.text()}`);
-  return await res.json();
-}
-
-async function getOrCreate(filePath, header) {
-  try {
-    return await githubGet(filePath);
-  } catch {
-    const result = await githubPut(filePath, null, header, `init ${filePath}`);
-    return { sha: result.content.sha, content: header };
-  }
-}
-
-function insertEntry(fileContent, anchor, entry) {
-  const idx = fileContent.indexOf(anchor);
-  if (idx === -1) throw new Error('Anchor marker not found');
-  const at = idx + anchor.length;
-  return fileContent.slice(0, at) + '\n' + entry + '\n' + fileContent.slice(at);
 }
 
 async function main() {
@@ -102,24 +48,18 @@ async function main() {
   const QUARTER = getCurrentQuarter(process.env.QUARTER_OVERRIDE);
   console.log(`Quarter: ${QUARTER}`);
 
-  for (const cat of CATEGORIES) {
-    for (const type of TYPES) {
-      const tmpPath = path.join(RESULTS_DIR, `${cat}-${type}.txt`);
-      if (!fs.existsSync(tmpPath)) { console.warn(`⚠  skip ${cat}-${type} — no temp file`); continue; }
-      const entry = fs.readFileSync(tmpPath, 'utf8').trim();
-      if (!entry) { console.warn(`⚠  skip ${cat}-${type} — empty`); continue; }
+  const files = fs.readdirSync(COULD_DIR).filter(f => f.endsWith(`-${QUARTER}.md`));
+  if (files.length === 0) { console.error(`❌ No *-${QUARTER}.md files in could/`); process.exit(1); }
 
-      const isIssue  = type === 'issue';
-      const anchor   = isIssue ? ISSUE_ANCHOR : ASSET_ANCHOR;
-      const header   = isIssue ? ISSUE_HEADER : ASSET_HEADER;
-      const filePath = `could/${cat.toUpperCase()}-${type.toUpperCase()}-${QUARTER}.md`;
-
-      const file    = await getOrCreate(filePath, header);
-      const updated = insertEntry(file.content, anchor, entry);
-      await githubPut(filePath, file.sha, updated, `would-update: ${cat} ${type}`);
-      console.log(`✅ ${filePath}`);
-    }
+  for (const filename of files) {
+    const content = fs.readFileSync(path.join(COULD_DIR, filename), 'utf8');
+    const ghPath  = `could/${filename}`;
+    let sha = null;
+    try { sha = await githubGet(ghPath); } catch {}
+    await githubPut(ghPath, sha, content, `would-update: ${filename}`);
+    console.log(`✅ ${ghPath}`);
   }
+
   console.log('\n✅ Done');
 }
 

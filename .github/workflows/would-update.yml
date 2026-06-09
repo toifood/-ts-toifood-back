@@ -39,11 +39,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Read codebase
+      - name: Analyse
         env:
           GH_TOKEN: ${{ secrets.TOIFOOD_CROSS_REPO_TOKEN }}
-        run: node would-read-md.js
-      - name: Analyse
+          QUARTER_OVERRIDE: ${{ inputs.quarter_override }}
         run: node would-update-md.js
       - name: Write to docs
         env:

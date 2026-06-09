@@ -1,16 +1,13 @@
 #!/usr/bin/env node
-// would-update-csv.js — append weekly analysis headlines to would/LOG-METRIC-{QUARTER}.csv
+// would-update-csv.js — extract headlines from local could/*-{QUARTER}.md and append to would/LOG-METRIC-{QUARTER}.csv
 
-const fs   = require('fs');
+const fs  = require('fs');
 const path = require('path');
 
-const RESULTS_DIR = '/tmp/would-results';
-const WORKSPACE   = process.env.GITHUB_WORKSPACE || __dirname;
-const WOULD_DIR   = path.join(WORKSPACE, 'would');
-
-const CATEGORIES = ['migrate', 'price', 'recovery', 'usage', 'instruction', 'bug', 'analysis'];
-const TYPES      = ['issue', 'asset'];
-const HEADERS    = 'date,category,type,headline\n';
+const WORKSPACE = process.env.GITHUB_WORKSPACE || __dirname;
+const COULD_DIR = path.join(WORKSPACE, 'could');
+const WOULD_DIR = path.join(WORKSPACE, 'would');
+const HEADERS   = 'date,category,type,headline\n';
 
 function getCurrentQuarter(override) {
   if (override) return override;
@@ -25,16 +22,14 @@ function nzDate() {
   }).format(new Date());
 }
 
-function extractHeadline(tmpPath) {
+function extractHeadline(filePath) {
   try {
-    const content = fs.readFileSync(tmpPath, 'utf8');
-    const match   = content.match(/^##\s+(?:ISSUE|ASSET):[^\n]+→\s*(.+)$/m);
+    const content = fs.readFileSync(filePath, 'utf8');
+    const anchor  = content.indexOf('####### <!-- ANCHOR MARKER');
+    if (anchor === -1) return '';
+    const match   = content.slice(anchor).match(/^##\s+(?:ISSUE|ASSET):[^\n]+→\s*(.+)$/m);
     return match ? match[1].trim() : '';
   } catch { return ''; }
-}
-
-function toCsvRow(date, category, type, headline) {
-  return `${date},${category},${type},"${headline.replace(/"/g, '""')}"\n`;
 }
 
 function main() {
@@ -43,23 +38,22 @@ function main() {
   const date     = nzDate();
   const rows     = [];
 
-  for (const cat of CATEGORIES) {
-    for (const type of TYPES) {
-      const tmpPath = path.join(RESULTS_DIR, `${cat}-${type}.txt`);
-      const headline = extractHeadline(tmpPath);
-      if (headline) rows.push(toCsvRow(date, cat, type, headline));
-    }
+  const files = fs.readdirSync(COULD_DIR).filter(f => f.endsWith(`-${QUARTER}.md`));
+
+  for (const filename of files) {
+    const parts    = filename.replace(`-${QUARTER}.md`, '').toLowerCase().split('-');
+    const type     = parts.pop();
+    const cat      = parts.join('-');
+    const headline = extractHeadline(path.join(COULD_DIR, filename));
+    if (headline) rows.push(`${date},${cat},${type},"${headline.replace(/"/g, '""')}"\n`);
   }
 
-  if (rows.length === 0) {
-    console.error('❌ No headlines found — skipping CSV update');
-    process.exit(1);
-  }
+  if (rows.length === 0) { console.error('❌ No headlines found — skipping CSV'); process.exit(1); }
 
   fs.mkdirSync(WOULD_DIR, { recursive: true });
   const existing = fs.existsSync(CSV_PATH) ? fs.readFileSync(CSV_PATH, 'utf8') : HEADERS;
   fs.writeFileSync(CSV_PATH, existing + rows.join(''));
-  console.log(`✅ ${CSV_PATH} — ${rows.length} rows appended (${date})`);
+  console.log(`✅ ${CSV_PATH} — ${rows.length} rows (${date})`);
 }
 
 main();
