@@ -10,6 +10,24 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:price {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:price 2026-06-09 18:03 → Ollama (qwen2.5:7b) as zero-cost default carries 100% of free-tier load; Redis rate limit counters expose live quota state to clients; isPremium computed server-side
+
+**Cost-free default path:**
+- Ollama running locally on the Mac mini M4 (`http://127.0.0.1:11434`) is the default AI provider — all free-tier recipe generation incurs zero marginal API cost
+- `AI_PROVIDER` env var controls provider selection; switching from Ollama to paid providers requires a deliberate environment change, preventing accidental cost runaway in dev
+
+**Rate limit as cost guardrail:**
+- Redis counters `ratelimit:{userId}:{provider}` with 1-hour TTL enforce hard caps before any paid API call is made
+- `getRecipeUsage()` returns real-time quota state — clients can surface "X of Y AI calls used" without a round-trip to the AI provider
+- `isPremium` flag computed server-side as `role !== "free"` — no client-side role spoofing can unlock higher quota tiers
+
+**Tier structure clarity:**
+- Role tiers (free/premium/admin) map directly to quota limits stored in code constants — no database lookup needed per request, making quota checks fast and deterministic
+- `express-rate-limit` on auth endpoints (10 req/15 min) prevents credential stuffing that could create premium accounts fraudulently
+
+**AppStore / PlayStore credential isolation:**
+- App Store Connect API uses short-lived ES256 JWT tokens (20-min expiry) — no long-lived credential stored in memory
+- PlayStore service account JSON is loaded from env var — absent credentials cause graceful null return, not a crash
 ## ASSET:price 2026-06-07 16:30 → Redis-backed hourly rate limits per role/provider; free=3 Ollama/2 Claude, premium=10/5, admin=unlimited
 
 **Rate limit implementation (`src/middleware/rateLimit.ts`):**
