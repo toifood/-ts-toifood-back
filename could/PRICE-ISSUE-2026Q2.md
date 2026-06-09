@@ -10,6 +10,21 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:price {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:price 2026-06-09 18:03 → Recipe save triggers up to N×AI insight calls (one per category) outside rate limit scope; no per-call cost cap on OpenAI/Claude; store metrics polling unbounded
+
+**Cost multiplication via insight pipeline:**
+- Each recipe save can trigger `runInsightAnalysis()` which iterates over ALL insight categories for the user. If a user has 5 active categories, one recipe save = 5 AI provider calls. These calls are not counted against the per-user rate limit (which tracks `ratelimit:{userId}:{provider}` per recipe request, not per insight call). A user who generates 3 recipes/hr (at their free tier limit) could actually trigger 15+ AI calls per hour.
+
+**No max_tokens cap on recipe generation prompts:**
+- Neither the Claude provider (`src/services/ai/claude.ts`) nor the OpenAI provider include a `max_tokens` constraint in their API calls. A malformed or adversarial prompt could generate an unusually large completion, driving up token cost with no ceiling. Claude API allows up to 200K output tokens on some models.
+
+**AppStore/PlayStore polling frequency uncontrolled:**
+- `GET /store-metrics` is admin-only but calls live external APIs (App Store Connect, Google Play Developer Reporting) on each request. If an admin dashboard polls this endpoint frequently, it will exhaust Google's daily quota and trigger rate limits on Apple's API — neither of which alerts on failure.
+
+**YouTube API quota invisible:**
+- `findRecipeVideo()` runs on every recipe save. Google YouTube Data API v3 has a 10,000 unit daily quota. A day with 200+ recipe saves will exhaust the quota silently; subsequent recipes return no video with only a logged warning.
+
+**Action needed:** Gate insight generation behind a job queue or debounce. Add `max_tokens` to all AI provider calls. Rate-limit the `/store-metrics` admin endpoint. Add YouTube quota exhaustion alerting.
 ## ISSUE:price 2026-06-07 16:30 → Insight AI calls unbilled and unmetered; openai provider in recipe generation has no cost cap; Redis failure silently removes all rate limits
 
 **Unmetered AI cost paths:**
