@@ -36,14 +36,19 @@ jobs:
         run: |
           mkdir -p ~/.claude/commands
           cp _toifood/.claude/commands/would-update.md ~/.claude/commands/
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
       - name: Run would-update skill
         env:
           GH_TOKEN: ${{ secrets.TOIFOOD_CROSS_REPO_TOKEN }}
           QUARTER_OVERRIDE: ${{ inputs.quarter_override }}
         run: claude --dangerously-skip-permissions --print "/would-update ts-back"
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: Write to docs
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOIFOOD_CROSS_REPO_TOKEN }}
+          QUARTER_OVERRIDE: ${{ inputs.quarter_override }}
+        run: node would-update-content.js
       - name: Update CSV log
         env:
           QUARTER_OVERRIDE: ${{ inputs.quarter_override }}

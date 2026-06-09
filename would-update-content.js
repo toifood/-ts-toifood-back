@@ -1,70 +1,126 @@
-const https = require('https');
+#!/usr/bin/env node
+// would-update-content.js — read skill analysis from /tmp/would-results/ and write to could/ docs
+// Usage: GITHUB_TOKEN=... [QUARTER_OVERRIDE=2026Q3] node would-update-content.js
 
-const REPO = process.env.GITHUB_REPOSITORY?.split('/')[1] || 'ts-back';
-const OWNER = process.env.GITHUB_REPOSITORY?.split('/')[0] || 'toifood';
-const TOKEN = process.env.GITHUB_TOKEN;
+const fs = require('fs');
+const path = require('path');
 
-const files = {
-  'could/MIGRATE-ISSUE-V1.md':     process.env.MIGRATE_ISSUE,
-  'could/MIGRATE-ASSET-V1.md':     process.env.MIGRATE_ASSET,
-  'could/PRICE-ISSUE-V1.md':       process.env.PRICE_ISSUE,
-  'could/PRICE-ASSET-V1.md':       process.env.PRICE_ASSET,
-  'could/RECOVERY-ISSUE-V1.md':    process.env.RECOVERY_ISSUE,
-  'could/RECOVERY-ASSET-V1.md':    process.env.RECOVERY_ASSET,
-  'could/USAGE-ISSUE-V1.md':       process.env.USAGE_ISSUE,
-  'could/USAGE-ASSET-V1.md':       process.env.USAGE_ASSET,
-  'could/INSTRUCTION-ISSUE-V1.md': process.env.INSTRUCTION_ISSUE,
-  'could/INSTRUCTION-ASSET-V1.md': process.env.INSTRUCTION_ASSET,
-  'could/BUG-ISSUE-V1.md':         process.env.BUG_ISSUE,
-  'could/BUG-ASSET-V1.md':         process.env.BUG_ASSET,
-  'could/ANALYSIS-ISSUE-V1.md':    process.env.ANALYSIS_ISSUE,
-  'could/ANALYSIS-ASSET-V1.md':    process.env.ANALYSIS_ASSET,
-};
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+const GITHUB_OWNER = 'toifood';
+const GITHUB_REPO  = 'ts-back';
+const RESULTS_DIR  = '/tmp/would-results';
 
-function api(method, path, body) {
-  return new Promise((resolve, reject) => {
-    const data = body ? JSON.stringify(body) : null;
-    const req = https.request({
-      hostname: 'api.github.com',
-      path,
-      method,
-      headers: {
-        'Authorization': `token ${TOKEN}`,
-        'User-Agent': 'ts-back-pipeline',
-        'Accept': 'application/vnd.github.v3+json',
-        ...(data ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } : {}),
-      },
-    }, res => {
-      let raw = '';
-      res.on('data', c => raw += c);
-      res.on('end', () => resolve(JSON.parse(raw)));
-    });
-    req.on('error', reject);
-    if (data) req.write(data);
-    req.end();
-  });
+const CATEGORIES = ['migrate', 'price', 'recovery', 'usage', 'instruction', 'bug', 'analysis'];
+const TYPES      = ['issue', 'asset'];
+
+const ISSUE_ANCHOR = '####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->';
+const ASSET_ANCHOR = '####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->';
+
+const ISSUE_HEADER = [
+  'ISSUE LOG',
+  'INSTRUCTION FOR AI MODEL:',
+  '',
+  'ALWAYS ADD NEW ISSUE ENTRIES AT THE TOP, DIRECTLY BELOW THIS HEADER.',
+  '',
+  'NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES.',
+  '',
+  'REQUIRED FORMAT FOR EACH ISSUE ENTRY:',
+  '',
+  '## ISSUE:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}',
+  '',
+  ISSUE_ANCHOR
+].join('\n');
+
+const ASSET_HEADER = [
+  'ASSET LOG',
+  'INSTRUCTION FOR AI MODEL:',
+  '',
+  'ALWAYS ADD NEW ASSET ENTRIES AT THE TOP, DIRECTLY BELOW THIS HEADER.',
+  '',
+  'NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES.',
+  '',
+  'REQUIRED FORMAT FOR EACH ASSET ENTRY:',
+  '',
+  '## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}',
+  '',
+  ASSET_ANCHOR
+].join('\n');
+
+function getCurrentQuarter(override) {
+  if (override) return override;
+  const now = new Date();
+  return `${now.getFullYear()}Q${Math.ceil((now.getMonth() + 1) / 3)}`;
 }
 
-async function updateFile(filePath, content) {
-  if (!content) { console.log(`SKIP ${filePath} — no content`); return; }
-  const date = new Date().toISOString().slice(0, 10);
-  let sha;
+async function githubGet(filePath) {
+  const res = await fetch(
+    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath}`,
+    { headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, Accept: 'application/vnd.github+json' } }
+  );
+  if (!res.ok) throw new Error(`GET ${filePath}: ${res.status}`);
+  const data = await res.json();
+  return { sha: data.sha, content: Buffer.from(data.content, 'base64').toString('utf8') };
+}
+
+async function githubPut(filePath, sha, content, message) {
+  const res = await fetch(
+    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filePath}`,
+    {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message,
+        content: Buffer.from(content).toString('base64'),
+        committer: { name: 'would-update', email: 'admin@toigroup.co.nz' },
+        ...(sha ? { sha } : {})
+      })
+    }
+  );
+  if (!res.ok) throw new Error(`PUT ${filePath}: ${res.status} ${await res.text()}`);
+  return await res.json();
+}
+
+async function getOrCreate(filePath, header) {
   try {
-    const existing = await api('GET', `/repos/${OWNER}/${REPO}/contents/${filePath}`);
-    sha = existing.sha;
-    const prev = Buffer.from(existing.content, 'base64').toString('utf8');
-    content = content + '\n\n' + prev;
-  } catch {}
-  await api('PUT', `/repos/${OWNER}/${REPO}/contents/${filePath}`, {
-    message: `would: update ${filePath.split('/').pop()} ${date}`,
-    content: Buffer.from(content).toString('base64'),
-    ...(sha ? { sha } : {}),
-  });
-  console.log(`✓ ${filePath}`);
+    return await githubGet(filePath);
+  } catch {
+    const result = await githubPut(filePath, null, header, `init ${filePath}`);
+    return { sha: result.content.sha, content: header };
+  }
 }
 
-(async () => {
-  for (const [filePath, content] of Object.entries(files)) {
-    await updateFile(filePath, content);
+function insertEntry(fileContent, anchor, entry) {
+  const idx = fileContent.indexOf(anchor);
+  if (idx === -1) throw new Error('Anchor marker not found');
+  const at = idx + anchor.length;
+  return fileContent.slice(0, at) + '\n' + entry + '\n' + fileContent.slice(at);
+}
+
+async function main() {
+  if (!GITHUB_TOKEN) throw new Error('GITHUB_TOKEN not set');
+
+  const QUARTER = getCurrentQuarter(process.env.QUARTER_OVERRIDE);
+  console.log(`Quarter: ${QUARTER}`);
+
+  for (const cat of CATEGORIES) {
+    for (const type of TYPES) {
+      const tmpPath = path.join(RESULTS_DIR, `${cat}-${type}.txt`);
+      if (!fs.existsSync(tmpPath)) { console.warn(`⚠  skip ${cat}-${type} — no temp file`); continue; }
+      const entry = fs.readFileSync(tmpPath, 'utf8').trim();
+      if (!entry) { console.warn(`⚠  skip ${cat}-${type} — empty`); continue; }
+
+      const isIssue  = type === 'issue';
+      const anchor   = isIssue ? ISSUE_ANCHOR : ASSET_ANCHOR;
+      const header   = isIssue ? ISSUE_HEADER : ASSET_HEADER;
+      const filePath = `could/${cat.toUpperCase()}-${type.toUpperCase()}-${QUARTER}.md`;
+
+      const file    = await getOrCreate(filePath, header);
+      const updated = insertEntry(file.content, anchor, entry);
+      await githubPut(filePath, file.sha, updated, `would-update: ${cat} ${type}`);
+      console.log(`✅ ${filePath}`);
+    }
   }
-})();
+  console.log('\n✅ Done');
+}
+
+main().catch(e => { console.error('❌', e.message); process.exit(1); });

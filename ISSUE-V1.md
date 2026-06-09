@@ -10,6 +10,15 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:ts-back 2026-06-09 → Q3 content written during Q2; hardcoded V1 suffixes in skill; must-update-timing.yml scaling concern
+
+**Q3 written in June:** A manual `workflow_dispatch` with `quarter_override: 2026Q3` ran 2026-06-08 05:23 UTC — initialised all Q3 template files and flipped the active write target to Q3. The subsequent weekly run wrote all codebase analysis into Q3 docs 3 weeks early. The `must-update-timing.yml` quarter logic itself is correct; cause was the override.
+
+**Hardcoded V1 suffixes:** `would-update.md` skill referenced `could/{CATEGORY}-ISSUE-V1.md` with a static suffix — not quarter-aware. Without an override, the next run had no deterministic quarter fallback. Fix applied — see ASSET.
+
+**Structural concern:** `must-update-timing.yml` owns doc headers (ISSUE/ASSET log boilerplate) inside a shared reusable workflow. Adding a new doc type or changing header format requires editing the shared workflow — tight coupling that scales poorly across repos.
+
+**Dead code resolved:** `ts-back/would-update-content.js` was no longer called by the workflow (replaced by Claude skill in a prior refactor). Now reactivated with a full rewrite — see ASSET.
 ## ISSUE:ts-back 2026-06-07 → error codes added to all routes (except flows.ts)
 
 Every JSON error response now includes a `code` field. Previously only `pantry.ts` had codes — all other routes returned bare `{ error: "..." }` strings.

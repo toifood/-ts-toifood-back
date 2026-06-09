@@ -10,6 +10,18 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:ts-back 2026-06-09 → would-update split: Claude skill = read+analyze, would-update-content.js = write
+
+**Quarter fix shipped (`-toifood` commit `6ea7df4`):** `would-update.md` Step 0 now computes `$QUARTER` from `QUARTER_OVERRIDE` or current date — matching ts-anz/ts-inbox pattern. Next regular Monday run targets Q2 correctly.
+
+**Architecture — clean split implemented:**
+- Claude skill (`would-update.md`): reads source codebase, generates 14 analyses, writes each to `/tmp/would-results/{category}-{type}.txt`
+- `would-update-content.js` (rewritten): reads temp files, `getOrCreate()` each `could/` doc with header+anchor on first write, inserts entry below anchor via GitHub API — consistent with ts-anz/ts-inbox pattern
+- `would-update.yml`: `setup-node` moved before skill; new `Write to docs` step runs `would-update-content.js` between skill and CSV
+
+**getOrCreate pattern:** file missing → PUT with full ISSUE/ASSET header (owned in `would-update-content.js`, not in shared timing workflow). No dependency on `must-update-timing.yml` for `.md` file initialisation.
+
+**Simplification direction (pending):** `must-update-timing.yml` to become suffix-only — remove `.md` creation, keep quarter computation + CSV init only. Each repo's `would-update-content.js` now owns its header constants.
 ## ASSET:ts-back 2026-06-07 → error code reference — all routes
 
 All error responses follow `{ error: string, code: string, ...extras }`. Frontend can switch on `code` without parsing error strings.
