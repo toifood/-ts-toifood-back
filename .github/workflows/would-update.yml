@@ -46,7 +46,7 @@ jobs:
         run: node would-update-md.js
       - name: Write to docs
         env:
-          GITHUB_TOKEN: ${{ secrets.TOIFOOD_CROSS_REPO_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           QUARTER_OVERRIDE: ${{ inputs.quarter_override }}
         run: node would-update-content.js
       - name: Update CSV log
