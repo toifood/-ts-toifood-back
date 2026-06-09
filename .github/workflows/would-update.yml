@@ -39,11 +39,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Run would-update skill
+      - name: Read codebase
         env:
           GH_TOKEN: ${{ secrets.TOIFOOD_CROSS_REPO_TOKEN }}
-          QUARTER_OVERRIDE: ${{ inputs.quarter_override }}
-        run: claude --dangerously-skip-permissions --print "/would-update ts-back"
+        run: node would-read-md.js
+      - name: Analyse
+        run: node would-update-md.js
       - name: Write to docs
         env:
           GITHUB_TOKEN: ${{ secrets.TOIFOOD_CROSS_REPO_TOKEN }}
