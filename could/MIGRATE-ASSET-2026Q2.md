@@ -10,6 +10,25 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:migrate {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:migrate 2026-06-09 18:03 → Prisma migrations folder confirmed present; CookRecord + UserInsight cascade cleanly from User; PantryItem deduplication enforced at DB level
+
+**Migration infrastructure:**
+- `prisma/migrations/` folder exists and is tracked — `prisma migrate deploy` can be run deterministically in a fresh environment
+- `prisma generate` regenerates the Prisma Client from the current schema — no manual type sync required
+- Schema changes are version-controlled alongside application code, so rollbacks restore both code and schema definition in sync
+
+**Cascade delete correctness for new models:**
+- `UserInsight → User`: `onDelete: Cascade` — user deletion automatically removes all AI-generated insights
+- `CookRecord → User`: `onDelete: Cascade` — cook sessions cleaned up on user delete
+- `CookRecord → Recipe`: `onDelete: Cascade` — deleting a recipe removes associated cook records
+- `PantryItem @@unique([userId, ingredient])`: prevents duplicate pantry entries at the DB level, making migration-time data repair unnecessary
+
+**Enum stability:**
+- `CookStatus` (STARTED/COMPLETED/ABANDONED), `UserRole` (free/premium/admin), `FlowTrigger`, `FlowStepType` are all additive enums — no existing values renamed or removed, safe to migrate without backfilling
+
+**Schema total (current state):**
+- 13 models, 4 enums, PostgreSQL dialect
+- All foreign keys have explicit `onDelete` directives — no implicit Prisma defaults in use
 ## ASSET:migrate 2026-06-07 16:30 → Schema now 13 models, 4 enums; CookRecord + UserInsight added in branch 1-1-1; cascade deletes mostly correct
 
 **Current schema summary (branch 1-1-1):**
