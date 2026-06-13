@@ -16,6 +16,9 @@ Billing edge cases, subscription state mismatches, failed charge handling
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:price 2026-06-13 18:11 → No subscription webhook handling; role upgrades to premium have no automated trigger
+
+The backend has a `UserRole` enum (`free`, `premium`, `admin`) with role-tiered rate limits, but there is no code path that upgrades a user from `free` to `premium` in response to a payment event. `src/services/appstore.ts` and `src/services/playstore.ts` only fetch analytics metrics — neither handles StoreKit 2 server notifications or Google Play Real-Time Developer Notifications. A user who pays via the App Store would remain on the `free` rate limit indefinitely. There is no `roleUpdatedAt` field, no log event on role change, and no idempotency guard, making manual upgrades unauditable and risky to double-apply.
 ## ISSUE:price 2026-06-13 17:04 → Claude spend untracked; prompt caching unused; OpenAI provider has no rate limiting
 
 **1. No token/cost logging.** `RECIPE-METRIC.csv` records `usedProvider=claude` and `responseMs` but not input/output token counts. The Anthropic API returns `usage.input_tokens` and `usage.output_tokens` in every response (`src/services/ai/claude.ts:85`) but these are discarded. Without token logging there is no way to reconcile App Store revenue against AI spend as user count grows.
