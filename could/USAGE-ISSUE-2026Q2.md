@@ -16,6 +16,15 @@ Performance bottlenecks, N+1 queries, memory leaks, resource exhaustion
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:usage 2026-06-13 17:04 → MEMORY-METRIC.csv orphaned; cook records absent from digest; getRecipeUsage returns 0 on Redis failure
+
+**1. MEMORY-METRIC.csv is orphaned.** `logs/MEMORY-METRIC.csv` appears in the git tree but no code in `src/` writes to it. It may be written by an external process under the `jayagent` account or is a leftover artifact. If external, it should be documented; if orphaned, it should be removed.
+
+**2. Cook records not summarised in daily digest.** The `CookRecord` model (migration `20260531000000`) tracks STARTED/COMPLETED/ABANDONED cooking sessions. `src/digest.ts` does not read or report on cook records. Adding a daily completion rate (`COMPLETED / (COMPLETED + ABANDONED)`) to the digest would give visibility into a new engagement metric.
+
+**3. `getRecipeUsage` returns zeroed quota on Redis failure.** `src/middleware/rateLimit.ts:40-57` returns `{used: 0, max: N, ttl: 0}` for both providers when Redis throws. This means `GET /recipes/usage` tells users they have full quota even if they've exhausted it, which could create UX confusion (generate button appears enabled, then hits a Redis-recovered 429).
+
+**4. No retention policy on CSV metric files.** Log files grow indefinitely. On a Mac mini with limited SSD, `RECIPE-METRIC.csv` will accumulate all-time history. A cron rotation or line-count cap would prevent unbounded growth.
 ## ISSUE:usage 2026-06-09 18:16 â†’ digest.ts is the primary usage-review mechanism but its data queries and output format are invisible to this tracking system; Slack alerts are ad-hoc strings with no structured event taxonomy
 
 **digest.ts as a black-box usage channel:**
