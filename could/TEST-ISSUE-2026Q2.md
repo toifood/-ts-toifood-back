@@ -15,6 +15,9 @@ Missing test coverage, untested edge cases, flaky tests, gaps in integration and
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:test 2026-06-13 18:11 → Zero test files in the repo; no test runner configured; complex logic runs untested in production
+
+The repository has no test files, no test runner (`jest`, `vitest`, `mocha`) in `package.json`, and no CI pipeline configuration. The `pluralStem` function handles 15 irregular plurals, an `ee` invariant, and three stripping rules — all are untested. The `extractFoodEmoji` 400+ line keyword table in `provider.ts` has no regression tests; a misplaced keyword (e.g. `"oil"` before `"foil"`) would silently produce wrong emojis for all affected recipes. The Apple JWT verification flow (JWKS fetch → key match → RS256 verify) has no integration test, so a key rotation by Apple could break all Apple Sign In silently until reported by a real user.
 ## ISSUE:test 2026-06-13 17:04 → Zero test files; pluralStem, extractFoodEmoji, and insight thresholds are highest-value targets
 
 No test files exist anywhere in the repository. The `package.json` has no test runner dependency (no jest, vitest, or similar).
