@@ -16,6 +16,15 @@ Failure scenarios, single points of failure, retry gaps
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:recovery 2026-06-13 17:04 → Ollama queue stall, no Ollama→Claude fallback, Redis-gated insight blackout
+
+**1. Ollama serial queue stall.** `OllamaProvider.generateRecipe` chains all requests via `this.queue = this.queue.then(...)` with a 65s per-call timeout (`src/services/ai/ollama.ts:228`). Three concurrent Ollama requests means the third user waits up to 130s before their call even starts. There is no queue depth metric, no drain on shutdown, and no circuit breaker.
+
+**2. One-way provider fallback.** Claude → Ollama fallback exists (`src/routes/recipes.ts:237-243`). Ollama → Claude fallback does NOT. If the `jayagent` account's Ollama service goes down (e.g. model unloaded, reboot), all free-tier recipe requests fail with 500. Adding a reverse fallback for non-premium users would improve free-tier resilience.
+
+**3. Redis-gated insight blackout.** `runInsightAnalysis` in `src/services/ai/insights.ts:997` uses `redis.set(..., 'NX')` to gate the weekly cooldown. The insight Redis client has `enableOfflineQueue: false` — if Redis is down when a user saves recipe #5, the key is never written and `already === null` is never set, so insights never fire for that user. Additionally, a Redis restart clears all cooldown keys, which could fire insights for many users simultaneously.
+
+**4. Digest Ollama dependency.** `src/digest.ts` calls Ollama twice (log summary + infra summary) with a 15s timeout each. If Ollama is booting at daily digest time, both summaries post as `"Summary unavailable (Ollama timeout)"` to Google Chat.
 ## ISSUE:recovery 2026-06-09 18:16 â†’ digest.ts and slack-bot.ts have no pm2 supervision; in-flight canvas OG image render is non-resumable on pm2 restart; chatAlert() not called on process-level crashes
 
 **Auxiliary processes unsupervised:**
