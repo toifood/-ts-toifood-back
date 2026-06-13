@@ -49,13 +49,13 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           QUARTER_OVERRIDE: ${{ inputs.quarter_override }}
         run: node would-update-content.js
-      - name: Update CSV log
-        env:
-          QUARTER_OVERRIDE: ${{ inputs.quarter_override }}
-        run: |
-          node would-update-csv.js
-          git config user.name "would-update"
-          git config user.email "admin@toigroup.co.nz"
-          git add would/
-          git diff --cached --quiet || git commit -m "would-update: log $(date '+%Y-%m-%d')"
-          git pull --rebase && git push
+      # - name: Update CSV log  # parked
+      #   env:
+      #     QUARTER_OVERRIDE: ${{ inputs.quarter_override }}
+      #   run: |
+      #     node would-update-csv.js
+      #     git config user.name "would-update"
+      #     git config user.email "admin@toigroup.co.nz"
+      #     git add would/
+      #     git diff --cached --quiet || git commit -m "would-update: log $(date '+%Y-%m-%d')"
+      #     git pull --rebase && git push
