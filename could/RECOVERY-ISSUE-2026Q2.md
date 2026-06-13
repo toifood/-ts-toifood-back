@@ -16,6 +16,9 @@ Failure scenarios, single points of failure, retry gaps
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:recovery 2026-06-13 18:11 → Ollama is a single point of failure with no automatic provider failover
+
+Ollama (`qwen2.5:7b`) is the default AI provider running on a single Mac mini. If Ollama crashes or the machine reboots, all recipe generation for the default provider fails hard — there is no automatic fallback to Claude or OpenAI when Ollama times out. The 65s `AbortSignal.timeout` prevents indefinite hangs but returns a hard error with no retry. The `/health` endpoint returns `{ status: "ok" }` unconditionally — it does not probe DB connectivity, Redis availability, or Ollama reachability, so a health-check-based load balancer would miss real outages. Email delivery has no retry: if Gmail rejects the SMTP connection, the verification/reset token is stored in DB but the email is silently lost with no user notification.
 ## ISSUE:recovery 2026-06-13 17:04 → Ollama queue stall, no Ollama→Claude fallback, Redis-gated insight blackout
 
 **1. Ollama serial queue stall.** `OllamaProvider.generateRecipe` chains all requests via `this.queue = this.queue.then(...)` with a 65s per-call timeout (`src/services/ai/ollama.ts:228`). Three concurrent Ollama requests means the third user waits up to 130s before their call even starts. There is no queue depth metric, no drain on shutdown, and no circuit breaker.
