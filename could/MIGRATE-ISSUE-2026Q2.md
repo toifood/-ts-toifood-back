@@ -16,6 +16,9 @@ Breaking schema changes, missing rollback, data loss risk
 PATHS:
 prisma/
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:migrate 2026-06-13 18:11 → No rollback scripts; destructive drops in recent migrations risk data loss
+
+Three migrations have dropped data irreversibly: `20260414_remove_favourite_table`, `20260417014518_remove_recipe_match_columns`, and `20260530_add_updated_at_drop_flowstep`. None have corresponding rollback SQL. Prisma does not generate down migrations, and no manual rollback scripts exist in the repo. The `CookRecord` model stores `ingredients`, `pantryItems`, and `groceryItems` as unvalidated `Json` columns — a silent application-layer schema change (e.g. renaming a key) would corrupt stored records without a migration. No seed scripts exist, so a fresh database after a failed migration leaves the app in an indeterminate state with no recovery path.
 ## ISSUE:migrate 2026-06-13 17:04 → Flat CSV metrics, in-memory Ollama queue, and DietaryPreference denormalization are migration candidates
 
 **1. CSV → DB metrics.** Recipe, discover, and digest metrics are appended to flat files (`logs/RECIPE-METRIC.csv`, `logs/DISCOVER-METRIC.csv`, `logs/DIGEST-METRIC.csv`) via synchronous `fs.appendFileSync` calls in `src/routes/recipes.ts:140-158` and `src/digest.ts:68-85`. This blocks the event loop on each write and makes historical SQL aggregation impossible. A `Metric` table in Postgres would unify the data store.
