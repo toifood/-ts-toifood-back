@@ -16,6 +16,9 @@ Performance bottlenecks, N+1 queries, memory leaks, resource exhaustion
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:usage 2026-06-13 18:11 → No pagination on recipe list; OG image generation blocks the request thread
+
+`GET /recipes` returns all recipes for a user in a single query with no limit or cursor — as a user's recipe count grows this will become a memory and latency problem. `@napi-rs/canvas` OG image generation runs synchronously in the recipe-generate request handler: canvas creation, drawing, and PNG encoding block the Node.js event loop per recipe. `runInsightAnalysis` fetches up to 50 recipes and calls Ollama up to 5 times after each recipe generation; under concurrent load this compounds DB query and Ollama pressure. Append-only CSV log files (`RECIPE-METRIC.csv`, `DISCOVER-METRIC.csv`, `DIGEST-METRIC.csv`) have no rotation strategy and grow unboundedly on a long-running server.
 ## ISSUE:usage 2026-06-13 17:04 → MEMORY-METRIC.csv orphaned; cook records absent from digest; getRecipeUsage returns 0 on Redis failure
 
 **1. MEMORY-METRIC.csv is orphaned.** `logs/MEMORY-METRIC.csv` appears in the git tree but no code in `src/` writes to it. It may be written by an external process under the `jayagent` account or is a leftover artifact. If external, it should be documented; if orphaned, it should be removed.
