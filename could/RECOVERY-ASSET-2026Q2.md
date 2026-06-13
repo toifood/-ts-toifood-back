@@ -16,6 +16,30 @@ Retry logic, circuit breakers, backup mechanisms
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:recovery 2026-06-13 17:04 → Existing fallback surfaces and fail-open patterns
+
+**Claude→Ollama fallback** (`src/routes/recipes.ts:231-248`):
+```ts
+try { result = await claude.generateRecipe(request); usedProvider = 'claude'; }
+catch { /* falls back */ result = await ollama.generateRecipe(request); fallback = true; }
+```
+Fallback is logged and recorded in RECIPE-METRIC.csv `fallback` column.
+
+**Rate-limit Redis fail-open** (`src/middleware/rateLimit.ts:100-102`):
+If Redis throws, rate limiting is skipped with a console.warn — the request proceeds.
+
+**Insight Redis client** (`src/services/ai/insights.ts:810-813`):
+```ts
+new Redis(REDIS_URL, { enableOfflineQueue: false, retryStrategy: (t) => Math.min(t*200, 2000) })
+```
+
+**Ollama timeout:** 65s `AbortSignal.timeout(65_000)` (`src/services/ai/ollama.ts:228`)
+
+**Digest Ollama timeout:** 15s `AbortController` + `setTimeout` (`src/digest.ts:109`)
+
+**chatAlert on generation failure:** `src/routes/recipes.ts:339` fires `chatAlert(..., 'error')` to Google Chat on any unhandled recipe generation error
+
+**PM2 process-level recovery:** `pm2 start dist/src/index.js --name toifood-back` with default restart policy
 ## ASSET:recovery 2026-06-09 18:16 â†’ Fail-open strategy is consistent across all three infrastructure dependencies (Redis, DB stats, canvas); auth token generation uses cryptographically secure random bytes; pm2 preserves stack traces for post-mortem
 
 **Consistent fail-open design across dependencies:**
