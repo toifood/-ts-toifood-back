@@ -16,6 +16,9 @@ Technical debt, tight coupling, missing abstraction, scalability concerns
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:analysis 2026-06-13 18:11 → PM2/log logic duplicated across three files; insights bypasses AIProvider abstraction
+
+The logic for reading PM2 process status, recent logs, and today's CSV metrics is duplicated across `src/digest.ts`, `src/slack-bot.ts`, and `src/routes/chat.ts` — three separate implementations that will diverge on any change to PM2's output format. `src/services/ai/insights.ts` hardcodes Ollama for suggestion generation, ignoring the `AIProvider` abstraction used everywhere else; if Ollama is down, suggestions silently degrade to templated fallback strings with no indication to the user. `src/services/ai/provider.ts` at 500+ lines mixes emoji keyword tables, region mappings, and prompt builder functions — unrelated concerns in one file. `GET /recipes` has no pagination, creating a latency ceiling as user recipe counts grow.
 ## ISSUE:analysis 2026-06-13 17:04 → Discover threshold is pantry-size-sensitive; responseMs includes queue wait; continent is random for Ollama
 
 **1. Discover `groceryPct >= 20` threshold is pantry-size-sensitive.**
