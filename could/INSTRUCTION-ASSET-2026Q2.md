@@ -16,6 +16,29 @@ Existing docs, README completeness, inline documentation
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:instruction 2026-06-13 17:04 → Full env var inventory and shared type exports
+
+**README-documented env vars:**
+DATABASE_URL, JWT_SECRET, AI_PROVIDER, OLLAMA_BASE_URL, OLLAMA_MODEL, OPENAI_API_KEY, ANTHROPIC_API_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, PORT
+
+**Code-only env vars (not in README):**
+| Var | Used in |
+|---|---|
+| GOOGLE_CHAT_WEBHOOK_URL | src/lib/chat.ts, src/digest.ts |
+| SLACK_WEBHOOK_URL | src/lib/slack.ts |
+| YOUTUBE_API_KEY | src/services/youtube.ts |
+| REDIS_URL | src/middleware/rateLimit.ts, src/services/ai/insights.ts |
+| CORS_ORIGIN | src/index.ts |
+| MIN_APP_VERSION | src/index.ts |
+| APP_WEB_URL | src/routes/recipes.ts |
+| APP_URL | src/routes/auth.ts |
+| APPSTORE_KEY_ID/ISSUER_ID/PRIVATE_KEY/APP_ID | src/services/appstore.ts |
+| PLAY_SERVICE_ACCOUNT_JSON/PLAY_PACKAGE_NAME | src/services/playstore.ts |
+
+**shared/ exports** (shared/src/index.ts):
+GenerateRecipeRequest, GenerateRecipeResponse, SaveRecipeRequest, DietaryFilter (enum), RecipeStyle (enum)
+
+**Deployment files:** `scripts/macmini-setup.sh`, `app.json`
 ## ASSET:instruction 2026-06-09 18:16 â†’ One-file-per-domain route structure makes any endpoint locatable by filename; env var table and deployment guide cover the happy path; CHANGELOG.md provides a human-readable release history
 
 **Predictable route location by filename:**
