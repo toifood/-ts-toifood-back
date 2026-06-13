@@ -16,6 +16,27 @@ Monitoring hooks, structured logging, observability coverage
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:usage 2026-06-13 17:04 → Metric schemas, cook record model, and Redis key inventory
+
+**RECIPE-METRIC.csv** — `src/routes/recipes.ts:119-158`
+Key analytics columns: usedProvider, fallback, responseMs, pantryPct, groceryPct, promptVersion, continent
+
+**DISCOVER-METRIC.csv** — `src/routes/recipes.ts:122-138`
+Columns: pantrySize, resultCount, avgPantryPct, avgGroceryPct
+
+**DIGEST-METRIC.csv** — `src/digest.ts:47-86`
+Columns: ollamaRecipes, claudeRecipes, avgResponseMs, wiredMb, usableMb, ollamaStatus
+
+**CookRecord fields** (schema.prisma):
+status: STARTED | COMPLETED | ABANDONED, ingredientCount, pantryCount, groceryCount, startedAt, completedAt
+
+**Redis key inventory:**
+- `ratelimit:{userId}:ollama` — 1hr TTL, atomic Lua INCR+EXPIRE
+- `ratelimit:{userId}:claude` — 1hr TTL
+- `insights:cooldown:{userId}` — 7-day TTL
+
+**Stats endpoint** (`src/index.ts:72-87`):
+60s in-memory cache; returns `recipesGenerated` and `cooksJoined` rounded to nearest 10
 ## ASSET:usage 2026-06-09 18:16 â†’ CookStatus funnel data is the foundation for completion-rate analytics; Recipe.provider + CookRecord join enables full AI cost-to-cook attribution; error code field on all responses enables client-side telemetry segmentation
 
 **CookStatus funnel as product health signal:**
