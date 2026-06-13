@@ -16,6 +16,24 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:bug 2026-06-13 17:04 → ageRange/gender null-clear blocked by validation; pluralStem duplicated with divergent correctness
+
+**Bug 1 — ageRange and gender cannot be cleared (`src/routes/users.ts:1567-1574`).**
+`PATCH /users/me` accepts `ageRange: string | null` to clear the field, but the validation `!VALID_AGE_RANGES.includes(ageRange as any)` evaluates to `true` when `ageRange` is `null` (null is not in the array), returning 400. A user who previously set their age range cannot remove it. Same issue on the gender check at line 1572.
+
+Fix:
+```ts
+// Before
+if ("ageRange" in req.body && !VALID_AGE_RANGES.includes(ageRange as any)) { ...400... }
+// After
+if ("ageRange" in req.body && ageRange !== null && !VALID_AGE_RANGES.includes(ageRange as any)) { ...400... }
+```
+
+**Bug 2 — `groceryMatchCount` is misnamed (`src/routes/recipes.ts:286`).**
+`groceryMatchCount = pantryUsed.length` counts pantry items used in the recipe, not grocery (non-pantry) items. The derived `groceryPct = groceryMatchCount / totalIngredients` measures pantry coverage of the full ingredient list — a valid metric — but the column name in RECIPE-METRIC.csv implies the opposite meaning, which will mislead future data analysis.
+
+**Bug 3 — `pluralStem` duplicated with divergent correctness.**
+Two implementations: `src/routes/recipes.ts:257-262` (3 regex rules) and `src/routes/cookRecords.ts:1984-2002` (IRREGULAR table + invariant rules). The simpler version incorrectly stems `"cheese"` → `"chees"` (missing the `ee` invariant guard). These affect pantry match accuracy and should be unified.
 ## ISSUE:bug 2026-06-09 18:16 â†’ 4 production risks: PATCH /insights/:id action field unvalidated, shareToken OG endpoint has no rate limit, GET /stats full table scan before cache warms, chat route auth state unknown
 
 **1. `PATCH /insights/:id` action field not strictly validated:**
