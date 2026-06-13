@@ -18,7 +18,7 @@ jobs:
     secrets: inherit
     with:
       quarter_override: ${{ inputs.quarter_override }}
-      categories: ANALYSIS,BUG,INSTRUCTION,MIGRATE,PRICE,RECOVERY,USAGE
+      categories: ANALYSIS,BUG,INSTRUCTION,MIGRATE,PRICE,RECOVERY,TEST,USAGE
 
   update:
     needs: timing

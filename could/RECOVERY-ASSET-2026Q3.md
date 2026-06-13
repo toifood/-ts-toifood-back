@@ -9,15 +9,21 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
+
+CUSTOM PROMPT:
+Retry logic, circuit breakers, backup mechanisms
+
+PATHS:
+
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
-## ASSET:recovery 2026-06-08 10:00 → Apple JWKS 1hr cache added; atomic Lua rate limit; pm2 + Slack alerts + Redis retry unchanged
+## ASSET:recovery 2026-06-08 10:00 â†’ Apple JWKS 1hr cache added; atomic Lua rate limit; pm2 + Slack alerts + Redis retry unchanged
 
 **Improvements since Q2:**
-- `getCachedAppleKeys()` — module-level in-memory JWKS cache with 1-hour TTL; Apple auth no longer fires an external HTTP request on every sign-in
-- Rate limit INCR/EXPIRE now atomic via Lua — expiry can no longer be permanently skipped under concurrency
+- `getCachedAppleKeys()` â€” module-level in-memory JWKS cache with 1-hour TTL; Apple auth no longer fires an external HTTP request on every sign-in
+- Rate limit INCR/EXPIRE now atomic via Lua â€” expiry can no longer be permanently skipped under concurrency
 
 **Unchanged recovery assets:**
-- PM2 manages the Node.js process on Mac mini — auto-restarts on crash
+- PM2 manages the Node.js process on Mac mini â€” auto-restarts on crash
 - `process.on('unhandledRejection')` and `process.on('uncaughtException')` log to console
 - `chatAlert()` fires on Apple auth failure and recipe generation errors
 - `ioredis` configured with exponential retry backoff (`min(times*200, 2000)ms`) and `enableOfflineQueue: false`

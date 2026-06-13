@@ -7,56 +7,62 @@ NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES.
 
 REQUIRED FORMAT FOR EACH ASSET ENTRY:
 
-## ASSET:instruction {YYYY-MM-DD HH:MM} → {CONTENT}
+## ASSET:instruction {YYYY-MM-DD HH:MM} â†’ {CONTENT}
+
+
+CUSTOM PROMPT:
+Existing docs, README completeness, inline documentation
+
+PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
-## ASSET:instruction 2026-06-09 18:16 → One-file-per-domain route structure makes any endpoint locatable by filename; env var table and deployment guide cover the happy path; CHANGELOG.md provides a human-readable release history
+## ASSET:instruction 2026-06-09 18:16 â†’ One-file-per-domain route structure makes any endpoint locatable by filename; env var table and deployment guide cover the happy path; CHANGELOG.md provides a human-readable release history
 
 **Predictable route location by filename:**
-- `src/routes/` contains one file per domain entity: `recipes.ts`, `auth.ts`, `users.ts`, `pantry.ts`, `lists.ts`, `records.ts`, `insights.ts`, `flows.ts`, `admin.ts`, `chat.ts`. Any endpoint is locatable by reading the filename — no route map, no controller index, no grep required. This is the most valuable structural documentation property for onboarding a new developer.
+- `src/routes/` contains one file per domain entity: `recipes.ts`, `auth.ts`, `users.ts`, `pantry.ts`, `lists.ts`, `records.ts`, `insights.ts`, `flows.ts`, `admin.ts`, `chat.ts`. Any endpoint is locatable by reading the filename â€” no route map, no controller index, no grep required. This is the most valuable structural documentation property for onboarding a new developer.
 
 **Happy-path deployment fully documented:**
 - `docs/macmini-deployment.md` covers the complete Mac mini M4 setup: PostgreSQL, Redis, Ollama, pm2, env vars, `prisma migrate deploy`, and pm2 start command. A developer starting from scratch has a complete checklist for the primary deployment target.
-- `docs/openclaw-integration.md` explains the Ollama local AI model integration — including model name (`qwen2.5:7b`) and the URL the API expects (`http://127.0.0.1:11434`).
+- `docs/openclaw-integration.md` explains the Ollama local AI model integration â€” including model name (`qwen2.5:7b`) and the URL the API expects (`http://127.0.0.1:11434`).
 
 **CHANGELOG.md as a release reference:**
-- `CHANGELOG.md` is tracked in the repo — version history is available alongside the code rather than in a separate wiki. This is a low-cost asset for understanding what changed between versions without reading git log.
+- `CHANGELOG.md` is tracked in the repo â€” version history is available alongside the code rather than in a separate wiki. This is a low-cost asset for understanding what changed between versions without reading git log.
 
-## ASSET:instruction 2026-06-09 18:03 → Shared TypeScript types provide implicit API contract; /health + /app-config enable client-side resilience; docs/ folder contains deployment and AI integration guides
+## ASSET:instruction 2026-06-09 18:03 â†’ Shared TypeScript types provide implicit API contract; /health + /app-config enable client-side resilience; docs/ folder contains deployment and AI integration guides
 
 **Shared TypeScript types as living API contract:**
-- `shared/src/index` exports `GenerateRecipeRequest`, `GenerateRecipeResponse`, `DietaryFilter`, `RecipeStyle` — these are the canonical types shared between the backend and mobile clients. Changes to these types surface as TypeScript compile errors on the client side before deployment, providing a built-in breaking-change detection mechanism.
+- `shared/src/index` exports `GenerateRecipeRequest`, `GenerateRecipeResponse`, `DietaryFilter`, `RecipeStyle` â€” these are the canonical types shared between the backend and mobile clients. Changes to these types surface as TypeScript compile errors on the client side before deployment, providing a built-in breaking-change detection mechanism.
 
 **Self-describing operational endpoints:**
-- `GET /health` → `{ status: "ok", timestamp }` — suitable for load balancer health checks and uptime monitoring without authentication
-- `GET /app-config` → `{ minVersion }` — mobile clients can enforce minimum app version using `MIN_APP_VERSION` env var. This is the documented mechanism for forcing users off outdated builds.
-- `GET /recipes/usage` — clients can display live quota remaining without any additional configuration
+- `GET /health` â†’ `{ status: "ok", timestamp }` â€” suitable for load balancer health checks and uptime monitoring without authentication
+- `GET /app-config` â†’ `{ minVersion }` â€” mobile clients can enforce minimum app version using `MIN_APP_VERSION` env var. This is the documented mechanism for forcing users off outdated builds.
+- `GET /recipes/usage` â€” clients can display live quota remaining without any additional configuration
 
 **docs/ folder covers deployment and AI:**
-- `docs/macmini-deployment.md` — complete Mac mini M4 setup guide (pm2, PostgreSQL, Redis, Ollama)
-- `docs/openclaw-integration.md` — Ollama local AI model integration guide
-- `CHANGELOG.md` — version history available for release notes
+- `docs/macmini-deployment.md` â€” complete Mac mini M4 setup guide (pm2, PostgreSQL, Redis, Ollama)
+- `docs/openclaw-integration.md` â€” Ollama local AI model integration guide
+- `CHANGELOG.md` â€” version history available for release notes
 
 **Route structure is navigable:**
-- All routes are in `src/routes/` with one file per domain (recipes, auth, users, pantry, lists, records, insights, flows, admin, chat) — new developers can locate any endpoint by filename without grepping.
-## ASSET:instruction 2026-06-07 16:30 → Versioned route structure (1-1-1 prefix) established; legacy routes maintained; health and app-config endpoints stable
+- All routes are in `src/routes/` with one file per domain (recipes, auth, users, pantry, lists, records, insights, flows, admin, chat) â€” new developers can locate any endpoint by filename without grepping.
+## ASSET:instruction 2026-06-07 16:30 â†’ Versioned route structure (1-1-1 prefix) established; legacy routes maintained; health and app-config endpoints stable
 
 **Route versioning pattern (1-1-1 branch):**
-- New route prefix: `/1-1-1/{auth|api|system}/` — separates auth, REST API, and system endpoints
+- New route prefix: `/1-1-1/{auth|api|system}/` â€” separates auth, REST API, and system endpoints
 - System endpoints: `/1-1-1/system/health`, `/1-1-1/system/admin`, `/1-1-1/system/flows`, `/1-1-1/system/stats` (redirects), `/1-1-1/system/app-config` (redirects)
 - Legacy unversioned paths kept alive until old app builds phase out (comment in `src/index.ts` documents this explicitly)
 
 **Self-documenting elements:**
-- `GET /1-1-1/system/health` → `{ status: "ok", timestamp }` — suitable for uptime monitoring
-- `GET /app-config` → `{ minVersion }` — client can enforce minimum app version via `MIN_APP_VERSION` env var
-- `GET /recipes/usage` → per-user rate limit state — documents quota to the client in real time
-- All routes use TypeScript interfaces for request/response bodies — types in `shared/src/index` serve as implicit API contract
+- `GET /1-1-1/system/health` â†’ `{ status: "ok", timestamp }` â€” suitable for uptime monitoring
+- `GET /app-config` â†’ `{ minVersion }` â€” client can enforce minimum app version via `MIN_APP_VERSION` env var
+- `GET /recipes/usage` â†’ per-user rate limit state â€” documents quota to the client in real time
+- All routes use TypeScript interfaces for request/response bodies â€” types in `shared/src/index` serve as implicit API contract
 
 **Deployment docs (external, not in branch):**
-- `docs/macmini-deployment.md` — Mac mini M4 setup
-- `docs/openclaw-integration.md` — Ollama AI model integration
-- `CHANGELOG.md` — version history
-## ASSET:instruction 2026-06-07 10:00 → Setup docs: README + docs/macmini-deployment.md + docs/openclaw-integration.md; current env vars and run commands
+- `docs/macmini-deployment.md` â€” Mac mini M4 setup
+- `docs/openclaw-integration.md` â€” Ollama AI model integration
+- `CHANGELOG.md` â€” version history
+## ASSET:instruction 2026-06-07 10:00 â†’ Setup docs: README + docs/macmini-deployment.md + docs/openclaw-integration.md; current env vars and run commands
 
 **Developer setup (from README + codebase):**
 
@@ -74,7 +80,7 @@ npm run dev            # ts-node on :3000
 |---|---|---|
 | DATABASE_URL | yes | PostgreSQL |
 | JWT_SECRET | yes | |
-| REDIS_URL | yes | Rate limiting — defaults to redis://localhost:6379 |
+| REDIS_URL | yes | Rate limiting â€” defaults to redis://localhost:6379 |
 | AI_PROVIDER | no | ollama (default) / openai / claude |
 | OLLAMA_BASE_URL | no | Default http://127.0.0.1:11434 |
 | OLLAMA_MODEL | no | Default qwen2.5:7b |
@@ -92,5 +98,5 @@ pm2 start dist/src/index.js --name toifood-back
 ```
 
 **Reference docs:**
-- `docs/macmini-deployment.md` — full Mac mini setup guide
-- `docs/openclaw-integration.md` — Ollama/local AI model integration
+- `docs/macmini-deployment.md` â€” full Mac mini setup guide
+- `docs/openclaw-integration.md` â€” Ollama/local AI model integration
