@@ -16,6 +16,9 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:bug 2026-06-13 18:11 → Google OAuth callback URL ignores version prefix; insights Redis throws are unhandled
+
+In `src/routes/auth.ts`, the Google OAuth `callbackURL` is `${APP_URL}/auth/google/callback` — the legacy path. The versioned route is `/1-1-1/auth/google/callback`. If legacy routes are removed, Google OAuth silently breaks. In `src/services/ai/insights.ts`, the Redis `set(..., 'NX')` call can throw on a connection error; this throw is not caught, causing `runInsightAnalysis` to produce an unhandled rejection mid-recipe-generation. In `cookRecords.ts`, `stemMatch` uses `as.includes(bs)` substring inclusion — a short pantry entry like `"oil"` incorrectly matches recipe ingredients `"foil"` or `"broil"`. `src/storeReport.ts` references a hardcoded `-ARCHIVE/-WOULD/` path that does not exist in the repo and crashes immediately on any fresh checkout.
 ## ISSUE:bug 2026-06-13 17:04 → ageRange/gender null-clear blocked by validation; pluralStem duplicated with divergent correctness
 
 **Bug 1 — ageRange and gender cannot be cleared (`src/routes/users.ts:1567-1574`).**
