@@ -16,6 +16,29 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:bug 2026-06-13 17:04 → Exact line locations and fix surfaces for each bug
+
+**Bug 1 — ageRange/gender null-clear:**
+- `src/routes/users.ts:1567` — ageRange validation
+- `src/routes/users.ts:1572` — gender validation
+- Type hint: parameter typed as `string | null` but null rejected
+
+**Bug 2 — groceryMatchCount naming:**
+- `src/routes/recipes.ts:286` — `groceryMatchCount = pantryUsed.length`
+- `src/routes/recipes.ts:287` — `groceryPct` derived from it
+- Downstream: RECIPE-METRIC.csv column `groceryMatchCount`; digest reads this column in `buildRecipeStats`
+- Suggested rename: `pantryInRecipeCount` or `pantryOverlapCount`
+
+**Bug 3 — pluralStem divergence:**
+- Simple (buggy): `src/routes/recipes.ts:257-262`
+  - Missing `ee` invariant: `pluralStem("cheese")` → `"chees"`
+- Full (correct): `src/routes/cookRecords.ts:1984-2002`
+  - Has IRREGULAR table (leaves→leaf, geese→goose, etc.)
+  - Has `ee` invariant guard
+- Fix: extract full version to `src/lib/pluralStem.ts`, import in both files
+
+**Minor — Apple JWK cast (`src/routes/auth.ts:1120`):**
+`(keys as any[]).find(...)` bypasses TypeScript on a `JsonWebKey[]` — not a runtime bug but worth removing
 ## ASSET:bug 2026-06-09 18:16 â†’ UUID-based resource IDs make enumeration attacks impractical; JSON body parser returns 400 on malformed input before any handler runs; length-capped text fields prevent DB column overflow
 
 **UUID resource IDs close enumeration attack surface:**
