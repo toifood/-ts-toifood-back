@@ -16,6 +16,9 @@ Pricing logic correctness, audit trails, webhook idempotency
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:price 2026-06-13 18:11 → Role-tiered rate limiting correctly implemented with Redis atomicity
+
+Rate limits are cleanly tiered by role in `src/middleware/rateLimit.ts`: `free` (3 ollama / 2 claude per hour), `premium` (10 / 5), `admin` (unlimited). A Redis Lua script (`INCR` + `EXPIRE` in one atomic call) prevents the race condition where two concurrent requests both see count=1 and the key never gets an expiry set. `getRecipeUsage()` exposes current used/max/TTL to clients so the frontend can display accurate quota status. The `isPremium` and `isAdmin` flags in `/users/me` are derived cleanly from `role` without separate boolean columns.
 ## ASSET:price 2026-06-13 17:04 → Claude call site, rate-limit config, and token response surface
 
 **Model:** `claude-haiku-4-5-20251001` — hardcoded at `src/services/ai/claude.ts:59`
