@@ -16,6 +16,9 @@ Retry logic, circuit breakers, backup mechanisms
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:recovery 2026-06-13 18:11 → Timeout guards, Redis fail-open, and graceful process error handlers in place
+
+All AI provider calls use `AbortSignal.timeout` (65s Ollama, 30s Claude) to prevent indefinite hangs. Redis clients are configured with `enableOfflineQueue: false` and exponential `retryStrategy` (max 2s) — rate limiting fails open with a `console.warn` rather than blocking user requests. The stats endpoint caches results in memory and serves stale data on DB error. `process.on('unhandledRejection')` and `process.on('uncaughtException')` handlers in `index.ts` log errors and prevent silent process death. Apple JWKS keys are cached in-memory for 1 hour to reduce external dependency calls and survive transient Apple API hiccups.
 ## ASSET:recovery 2026-06-13 17:04 → Existing fallback surfaces and fail-open patterns
 
 **Claude→Ollama fallback** (`src/routes/recipes.ts:231-248`):
