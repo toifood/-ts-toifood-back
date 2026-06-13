@@ -16,6 +16,9 @@ Undocumented APIs, missing env vars, unclear onboarding steps
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:instruction 2026-06-13 18:11 → README missing 16 env vars and omits all routes added since initial launch
+
+The README `.env` table documents 10 variables but the codebase uses at least 26. Missing: `CORS_ORIGIN`, `APP_URL`, `MIN_APP_VERSION`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN`, `SLACK_WEBHOOK_URL`, `GOOGLE_CHAT_WEBHOOK_URL`, `REDIS_URL`, `APPSTORE_KEY_ID`, `APPSTORE_ISSUER_ID`, `APPSTORE_PRIVATE_KEY`, `APPSTORE_APP_ID`, `PLAY_SERVICE_ACCOUNT_JSON`, `PLAY_PACKAGE_NAME`. The API section documents only Auth, Recipes, Favourites (removed), and Users — missing `/records`, `/insights`, `/lists`, `/flows`, `/store-metrics`, and `/admin` routes entirely. The versioned `/1-1-1/` prefix is undocumented. `src/digest.ts` and `src/storeReport.ts` have no run instructions. Apple Sign In audience `com.toifood.app` is hardcoded with no operator documentation.
 ## ISSUE:instruction 2026-06-13 17:04 → Linked docs missing from repo; 10+ env vars undocumented in README
 
 **1. Missing docs referenced by README.** Two documents are linked from `README.md` but are absent from the git tree:
