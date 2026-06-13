@@ -16,6 +16,9 @@ Existing docs, README completeness, inline documentation
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:instruction 2026-06-13 18:11 → README has accurate architecture diagram and complete setup walkthrough
+
+README includes a clear ASCII server topology diagram (Cloudflare Tunnel → Mac mini → Node.js/PostgreSQL/Ollama across two accounts) that accurately reflects the deployed architecture. Setup steps cover `npm install`, `.env` configuration, `prisma generate` + `migrate deploy`, dev server, and PM2 production start. `scripts/macmini-setup.sh` covers server provisioning. `.env.example` provides a bootstrapping template. Route files use consistent section-header comments. The `shared/` package provides TypeScript-typed request/response contracts (`GenerateRecipeRequest`, `DietaryFilter`, `RecipeStyle`) shared between frontend and backend. Inline `console.log` prefixes throughout routes serve as informal operation documentation.
 ## ASSET:instruction 2026-06-13 17:04 → Full env var inventory and shared type exports
 
 **README-documented env vars:**
