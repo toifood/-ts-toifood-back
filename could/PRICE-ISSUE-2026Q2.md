@@ -16,6 +16,15 @@ Billing edge cases, subscription state mismatches, failed charge handling
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:price 2026-06-13 17:04 → Claude spend untracked; prompt caching unused; OpenAI provider has no rate limiting
+
+**1. No token/cost logging.** `RECIPE-METRIC.csv` records `usedProvider=claude` and `responseMs` but not input/output token counts. The Anthropic API returns `usage.input_tokens` and `usage.output_tokens` in every response (`src/services/ai/claude.ts:85`) but these are discarded. Without token logging there is no way to reconcile App Store revenue against AI spend as user count grows.
+
+**2. Prompt caching unused.** `src/services/ai/claude.ts:63-74` sends the full request with no `cache_control` headers. The system prompt `"You are a professional chef. Always respond with valid JSON only."` is static on every call and eligible for prompt caching. At Haiku 4.5 pricing, cached input tokens cost 90% less. Adding `cache_control: { type: "ephemeral" }` to the system block requires the `anthropic-beta: prompt-caching-2024-07-31` header.
+
+**3. OpenAI provider bypasses rate limiting.** `src/services/ai/openai.ts` uses `gpt-4o` but is not wired into `recipeGenerateRateLimit()` (`src/routes/recipes.ts:176`). The rate-limit middleware only checks `provider === 'claude'` vs ollama; a request with `provider=openai` skips the limit entirely. OpenAI is also not guarded by an API key check at the middleware layer.
+
+**4. Rate limits have no daily cap.** The hourly Redis key (`ratelimit:{userId}:claude`, 3600s TTL) resets every hour. A premium user can make 5×24=120 Claude calls/day with no daily ceiling.
 ## ISSUE:price 2026-06-09 18:16 â†’ digest.ts and slack-bot.ts are unmetered auxiliary processes; heavy DB aggregation queries in digest compete with user traffic on single-node PostgreSQL; no read-replica strategy
 
 **Auxiliary processes outside cost and query budgets:**
