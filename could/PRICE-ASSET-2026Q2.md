@@ -16,6 +16,27 @@ Pricing logic correctness, audit trails, webhook idempotency
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:price 2026-06-13 17:04 → Claude call site, rate-limit config, and token response surface
+
+**Model:** `claude-haiku-4-5-20251001` — hardcoded at `src/services/ai/claude.ts:59`
+
+**Prompt version:** `claude-v4` (`src/services/ai/claude.ts:3`)
+
+**max_tokens:** 1024 per call (`src/services/ai/claude.ts:60`)
+
+**Timeout:** 30s AbortSignal (`src/services/ai/claude.ts:74`)
+
+**Rate-limit config** (`src/middleware/rateLimit.ts:18-21`):
+```
+free:    { ollama: 3, claude: 2 }   // per hour
+premium: { ollama: 10, claude: 5 }
+admin:   { ollama: 999, claude: 999 }
+```
+Redis keys: `ratelimit:{userId}:claude`, `ratelimit:{userId}:ollama` — 1hr TTL
+
+**Token usage surface:** `src/services/ai/claude.ts:85` — `data` from `response.json()` includes `usage` field; currently unused
+
+**Caching opportunity:** add `anthropic-beta: prompt-caching-2024-07-31` header and wrap system string in `{ type: 'text', text: '...', cache_control: { type: 'ephemeral' } }`
 ## ASSET:price 2026-06-09 18:16 â†’ Provider isolation via AI_PROVIDER env var prevents accidental paid-tier usage in dev; AppStore ES256 JWT is short-lived; role-tier limits are in-memory constants with no DB round-trip
 
 **Provider isolation at runtime:**
