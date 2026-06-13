@@ -16,6 +16,25 @@ Migration tooling, seed scripts, rollback coverage
 PATHS:
 prisma/
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:migrate 2026-06-13 17:04 → CSV schemas, Prisma migration history, and queue surface
+
+**RECIPE-METRIC.csv columns** (`src/routes/recipes.ts:120`):
+timestamp, userId, requestedProvider, usedProvider, fallback, responseMs, style, filters, pantrySelectedCount, ingredientCount, steps, pantryMatchCount, pantryPct, groceryMatchCount, totalIngredients, groceryPct, promptVersion, continent, title
+
+**DISCOVER-METRIC.csv columns** (`src/routes/recipes.ts:123`):
+timestamp, userId, pantrySize, resultCount, avgPantryPct, avgGroceryPct
+
+**DIGEST-METRIC.csv columns** (`src/digest.ts:50`):
+timestamp, recipeCount, discoverCount, ollamaRecipes, claudeRecipes, avgResponseMs, wiredMb, usableMb, ollamaStatus
+
+**Latest Prisma migrations:**
+- `20260531000001_add_user_age_gender`
+- `20260531000000_add_cook_record`
+- `20260530000000_add_updated_at_drop_flowstep`
+
+**OllamaProvider queue surface:** `src/services/ai/ollama.ts:173` — `this.queue: Promise<unknown> = Promise.resolve()`
+
+**DietaryPreference write sites:** `src/routes/users.ts:1482-1486`, `src/routes/flows.ts:1413-1419`
 ## ASSET:migrate 2026-06-09 18:16 â†’ @@unique constraints on three models provide DB-level idempotency; all 13 models have explicit onDelete directives; enum-only schema additions are zero-downtime safe
 
 **DB-level idempotency guards:**
