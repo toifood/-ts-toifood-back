@@ -16,6 +16,9 @@ Well-structured patterns, test coverage, production-ready components
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:analysis 2026-06-13 18:11 → Clean AIProvider abstraction, atomic Redis patterns, and production-grade auth flows
+
+The `AIProvider` interface with three concrete implementations (Ollama, OpenAI, Claude) behind a factory function is a clean extension point — adding a new provider requires only a new class and a factory switch case. The Redis Lua INCR+EXPIRE script is a production-correct atomic concurrency pattern. `pluralStem` + `stemMatch` in `cookRecords.ts` handles 15 irregular plurals (leaf/leaves, knife/knives, etc.) with an explicit invariant table. Apple Sign In uses native Node.js `crypto.createPublicKey({ format: 'jwk' })` without extra dependencies. The `@@unique([userId, flowId])` constraint on `UserFlowView` prevents duplicate flow records at the DB layer regardless of concurrent requests.
 ## ASSET:analysis 2026-06-13 17:04 → Discover SQL, insight thresholds, and continent pool
 
 **Discover SQL entry point:** `src/routes/recipes.ts:645-696`
