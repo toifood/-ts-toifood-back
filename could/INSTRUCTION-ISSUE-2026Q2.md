@@ -16,6 +16,19 @@ Undocumented APIs, missing env vars, unclear onboarding steps
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:instruction 2026-06-13 17:04 → Linked docs missing from repo; 10+ env vars undocumented in README
+
+**1. Missing docs referenced by README.** Two documents are linked from `README.md` but are absent from the git tree:
+   - `docs/macmini-deployment.md` — "full Mac mini setup guide for the backend team"
+   - `docs/openclaw-integration.md` — "how the local AI model connects to the backend"
+   These are either untracked, in a different repo, or never created.
+
+**2. Ten+ env vars used in code but absent from the README env table.** The README documents 10 vars; these are used in source but not listed:
+`GOOGLE_CHAT_WEBHOOK_URL`, `SLACK_WEBHOOK_URL`, `YOUTUBE_API_KEY`, `REDIS_URL`, `CORS_ORIGIN`, `MIN_APP_VERSION`, `APP_WEB_URL`, `APP_URL`, `APPSTORE_KEY_ID`, `APPSTORE_ISSUER_ID`, `APPSTORE_PRIVATE_KEY`, `APPSTORE_APP_ID`, `PLAY_SERVICE_ACCOUNT_JSON`, `PLAY_PACKAGE_NAME`.
+
+**3. `shared/` subpackage undocumented.** `shared/` has its own `package.json` and `tsconfig.json`. It exports `GenerateRecipeRequest`, `GenerateRecipeResponse`, `DietaryFilter`, `RecipeStyle`, and `SaveRecipeRequest` — types shared between backend and mobile client. There is no README or doc explaining how this package is published, symlinked, or consumed by the mobile repo.
+
+**4. No test guide or CONTRIBUTING file.** Zero test files exist. New contributors have no guidance on test strategy, local DB setup, or how to run the dev server against a mocked AI provider.
 ## ISSUE:instruction 2026-06-09 18:16 â†’ src/routes/chat.ts is production-mounted with no documentation, no auth specification, and unknown AI cost profile; digest.ts and slack-bot.ts have no startup instructions or pm2 config entries in any doc
 
 **chat route is a documentation black hole:**
