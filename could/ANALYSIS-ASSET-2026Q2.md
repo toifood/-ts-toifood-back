@@ -16,6 +16,26 @@ Well-structured patterns, test coverage, production-ready components
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:analysis 2026-06-13 17:04 → Discover SQL, insight thresholds, and continent pool
+
+**Discover SQL entry point:** `src/routes/recipes.ts:645-696`
+- Filter: `shareToken IS NOT NULL`, `userId != requester`, `groceryPct >= 20`
+- Order: `matchCount DESC, createdAt DESC` — LIMIT 20
+- Includes: avgStars, reviewCount, myStars, author profileVisibility
+- Pantry match is computed via `UNNEST(r.pantryUsed)` cross-referenced against the requesting user's `PantryItem` table
+
+**Insight analysis thresholds** (`src/services/ai/insights.ts`):
+| Category | Threshold | Min data |
+|---|---|---|
+| dietary | ≥30% of last 50 recipes match tag not in prefs | 5 recipes |
+| cuisine | ≥40% of continent-tagged recipes from one continent | 3 with continent |
+| style | ≥70% of styled recipes use one style ≠ current | 10 recipes, 5 with style |
+| pantry | ingredient in ≥25% of recipes, not in pantry | 5 recipes |
+| mealType | one type ≥50% of typed recipes | 4 with mealType |
+
+**Continent pool:** `src/services/ai/provider.ts:383-450` — 71 [country, continent] pairs across 7 continents
+
+**Ollama does not filter by continentPreferences:** `src/services/ai/ollama.ts:190` — `pickRegion()` called with no args
 ## ASSET:analysis 2026-06-09 18:16 â†’ Express middleware stack is minimal and explicit; no framework magic; Prisma-generated types make DB schema the single source of truth; ownership-guard pattern is applied uniformly across all mutable routes
 
 **Explicit, readable middleware stack:**
