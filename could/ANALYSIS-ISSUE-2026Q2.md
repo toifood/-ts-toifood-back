@@ -16,6 +16,19 @@ Technical debt, tight coupling, missing abstraction, scalability concerns
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:analysis 2026-06-13 17:04 → Discover threshold is pantry-size-sensitive; responseMs includes queue wait; continent is random for Ollama
+
+**1. Discover `groceryPct >= 20` threshold is pantry-size-sensitive.**
+`GET /recipes/discover` filters to `groceryPct >= 20` (`src/routes/recipes.ts:687`), where `groceryPct = matchCount / recipeIngredientCount * 100`. For a user with 1 pantry item, any recipe using that item where the recipe has ≤5 ingredients qualifies (20%+). For a user with 30 items, almost any shared recipe qualifies. The threshold doesn't account for pantry size, making the feed experience inconsistent across user types.
+
+**2. `responseMs` includes Ollama queue wait time.**
+In `src/routes/recipes.ts:229-250`, `genStart = Date.now()` is set before `ollama.generateRecipe()` is called. The `OllamaProvider` serializes requests, so `responseMs` for queued requests includes the time spent waiting for the previous request to complete. P95 latency in the digest is therefore inflated when multiple users generate simultaneously.
+
+**3. Continent assignment is random for Ollama, preference-weighted for Claude.**
+`OllamaProvider._generate` calls `pickRegion()` with no args — fully random from all 71 country/continent pairs. `ClaudeProvider.generateRecipe` calls `pickRegion(request.continentPreferences)` filtered to user preferences. The `continent` field stored on Recipe therefore reflects the user's preferences only for Claude recipes, making continent-based analysis in insights and discover feed inconsistent across providers.
+
+**4. Insight weekly cooldown is Redis-resident, not DB-resident.**
+The `insights:cooldown:{userId}` key in Redis is lost on Redis restart. A Redis restart could trigger simultaneous insight analysis for all active users, producing a burst of Ollama calls.
 ## ISSUE:analysis 2026-06-09 18:16 â†’ Three Node.js processes (API + digest + slack-bot) share one PostgreSQL instance with unconfigured connection pools; no test suite means every deploy is production-first validation; shared router instances undermine API versioning
 
 **Multi-process PostgreSQL connection pool contention:**
