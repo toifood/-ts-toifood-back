@@ -16,6 +16,9 @@ Migration tooling, seed scripts, rollback coverage
 PATHS:
 prisma/
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:migrate 2026-06-13 18:11 → 34 ordered migrations with consistent naming and cascade-aware schema
+
+34 migration SQL files are present, ordered by timestamp with descriptive names. `migration_lock.toml` pins the provider to PostgreSQL, preventing accidental dialect drift. Recent models (`CookRecord`, `SavedList`, `PantryItem`, `UserFlowView`, `RecipeReview`, `UserInsight`) correctly use `onDelete: Cascade` on user-owned relations, ensuring clean cleanup on account deletion. The `@@unique` constraint on `PantryItem(userId, ingredient)` prevents duplicates at the DB layer. README documents `prisma migrate deploy` as the deploy command and includes the two-step `prisma generate` + `migrate deploy` setup flow.
 ## ASSET:migrate 2026-06-13 17:04 → CSV schemas, Prisma migration history, and queue surface
 
 **RECIPE-METRIC.csv columns** (`src/routes/recipes.ts:120`):
