@@ -16,6 +16,9 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:bug 2026-06-13 18:11 → Structured error codes, multi-layer emoji fallbacks, and defensive AI output parsing
+
+All auth and API routes return structured error objects with `code` strings (`MISSING_FIELDS`, `EMAIL_EXISTS`, `TOKEN_INVALID`, `PANTRY_LIMIT_EXCEEDED`, `LISTS_LIMIT_EXCEEDED`, etc.), enabling reliable client-side error handling without string matching. `extractFoodEmoji` has a four-layer fallback (AI emoji gate → title keyword inference → ingredient inference → `🍽️`), preventing empty emoji fields. `OllamaProvider` strips CJK characters from all string fields defensively against `qwen2.5` bleed-through. `ClaudeProvider` strips markdown code fences before JSON parsing. The rate limiter catch block logs the Redis error and allows the request through rather than returning 500 to users.
 ## ASSET:bug 2026-06-13 17:04 → Exact line locations and fix surfaces for each bug
 
 **Bug 1 — ageRange/gender null-clear:**
