@@ -16,6 +16,13 @@ Breaking schema changes, missing rollback, data loss risk
 PATHS:
 prisma/
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:migrate 2026-06-13 17:04 → Flat CSV metrics, in-memory Ollama queue, and DietaryPreference denormalization are migration candidates
+
+**1. CSV → DB metrics.** Recipe, discover, and digest metrics are appended to flat files (`logs/RECIPE-METRIC.csv`, `logs/DISCOVER-METRIC.csv`, `logs/DIGEST-METRIC.csv`) via synchronous `fs.appendFileSync` calls in `src/routes/recipes.ts:140-158` and `src/digest.ts:68-85`. This blocks the event loop on each write and makes historical SQL aggregation impossible. A `Metric` table in Postgres would unify the data store.
+
+**2. In-memory Ollama serial queue.** `OllamaProvider` in `src/services/ai/ollama.ts:173` chains all requests onto `this.queue = this.queue.then(...)` to prevent Ollama context-window thrash on the Mac mini. This queue is lost on every PM2 restart, making queue depth invisible to monitoring. A Redis-backed queue or documented restart policy would make this recoverable.
+
+**3. DietaryPreference denormalization.** Dietary tags live in two places: the normalized `DietaryPreference` table (per-user preferences) and `dietaryTags: String[]` on Recipe. The recipe column is only populated for Claude-generated recipes (`src/routes/recipes.ts:324` — `usedProvider === 'claude' ? validFilters : []`). Ollama recipes always store `[]`. This split is undocumented and makes tag-based discover filtering inconsistent.
 ## ISSUE:migrate 2026-06-09 18:16 â†’ JSON column format versioning absent across four models; profileVisibility and FlowStep.content have no schema enforcement; onboarding response data locked in unqueryable JSON blobs
 
 **Unversioned JSON shapes in four models:**
