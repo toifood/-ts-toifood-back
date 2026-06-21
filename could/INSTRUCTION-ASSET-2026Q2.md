@@ -16,6 +16,17 @@ Existing docs, README completeness, inline documentation
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:instruction 2026-06-22 11:51 → Documentation coverage snapshot June 2026
+
+| Area | Status |
+|---|---|
+| README route table | Incomplete — missing /pantry, /lists, /flows, /insights, /records, /chat, /store-metrics; documents removed /favourites |
+| Versioned prefix (/1-1-1/) | Not documented |
+| .env.example coverage | ~9 of ~25 env vars documented |
+| shared/ build process | No build script; index.js and index.ts co-exist with no explanation |
+| Prisma schema | Well-structured; 14 models, all relations explicit |
+| Inline code comments | Sparse but present for non-obvious decisions (e.g. Lua rate-limit script, Apple JWKS cache TTL, Google OAuth deep-link redirect rationale) |
+| ops runbook | Not present in repo; referenced docs (macmini-deployment.md, openclaw-integration.md) are not in tree |
 ## ASSET:backend 2026-06-22 11:03 → Environment, deploy, and raw-SQL migration instructions are well-established
 
 **`.env.example` is current** — Covers all required env vars: `DATABASE_URL`, `JWT_SECRET`, `AI_PROVIDER`, `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_CLIENT_ID/SECRET`, `PORT`. Operational secrets (`APPSTORE_KEY_ID`, `APPSTORE_ISSUER_ID`, `APPSTORE_PRIVATE_KEY`, `APPSTORE_APP_ID`, `PLAY_SERVICE_ACCOUNT_JSON`, `PLAY_PACKAGE_NAME`, `TOIFOOD_CROSS_REPO_TOKEN`, `GOOGLE_CHAT_WEBHOOK_URL`, `MIN_APP_VERSION`) are not in `.env.example` — these need to be added or kept in a separate ops secrets file.
