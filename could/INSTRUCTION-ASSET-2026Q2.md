@@ -16,6 +16,15 @@ Existing docs, README completeness, inline documentation
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:backend 2026-06-22 11:03 → Environment, deploy, and raw-SQL migration instructions are well-established
+
+**`.env.example` is current** — Covers all required env vars: `DATABASE_URL`, `JWT_SECRET`, `AI_PROVIDER`, `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_CLIENT_ID/SECRET`, `PORT`. Operational secrets (`APPSTORE_KEY_ID`, `APPSTORE_ISSUER_ID`, `APPSTORE_PRIVATE_KEY`, `APPSTORE_APP_ID`, `PLAY_SERVICE_ACCOUNT_JSON`, `PLAY_PACKAGE_NAME`, `TOIFOOD_CROSS_REPO_TOKEN`, `GOOGLE_CHAT_WEBHOOK_URL`, `MIN_APP_VERSION`) are not in `.env.example` — these need to be added or kept in a separate ops secrets file.
+
+**Raw-SQL migration pattern is stable** — All schema changes since March 2026 have been applied via `ALTER TABLE` / `CREATE TABLE` + `npx prisma generate`. This is documented in the MIGRATE files and is the established pattern for this environment.
+
+**Legacy route prefix** — `index.ts` keeps all routes mounted at both `/` (legacy, 1-1-0 builds) and `/1-1-1/` (current). Do not remove the legacy prefix until a forced mobile update ships to all users on 1-1-0.
+
+**`scripts/macmini-setup.sh`** is the canonical new-machine setup script. For the jayagent account (Ollama), setup is separate and covered in `docs/openclaw-integration.md` (referenced in README, not present in this repo).
 ## ASSET:instruction 2026-06-13 18:11 → README has accurate architecture diagram and complete setup walkthrough
 
 README includes a clear ASCII server topology diagram (Cloudflare Tunnel → Mac mini → Node.js/PostgreSQL/Ollama across two accounts) that accurately reflects the deployed architecture. Setup steps cover `npm install`, `.env` configuration, `prisma generate` + `migrate deploy`, dev server, and PM2 production start. `scripts/macmini-setup.sh` covers server provisioning. `.env.example` provides a bootstrapping template. Route files use consistent section-header comments. The `shared/` package provides TypeScript-typed request/response contracts (`GenerateRecipeRequest`, `DietaryFilter`, `RecipeStyle`) shared between frontend and backend. Inline `console.log` prefixes throughout routes serve as informal operation documentation.
