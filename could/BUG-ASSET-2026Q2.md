@@ -16,6 +16,15 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:bug 2026-06-22 11:51 → Bug inventory snapshot June 2026
+
+| # | File | Line(s) | Description | Severity |
+|---|---|---|---|---|
+| 1 | src/routes/recipes.ts | 1659–1660 | `groceryMatchCount = pantryUsed.length` — duplicates pantryMatchCount; groceryPct is wrong | Medium |
+| 2 | src/services/ai/provider.ts | ~1007 | `inferEmojiFromTitle` uses `lastIndexOf` — later-in-string keyword wins over more-specific earlier match | Low |
+| 3 | src/routes/users.ts | ~2371 | `GET /users/me` returns 401 for deleted-user token; should be 404 | Low |
+| 4 | src/routes/users.ts | ~2641–2659 | `DELETE /users/me` performs sequential deletes outside a transaction — orphan risk on crash | Medium |
+| 5 | src/routes/auth.ts | ~115–159 | `pushRowToGitHub` IIFE silently drops auth metric rows on 409 conflict after 2 retries | Low |
 ## ASSET:backend 2026-06-22 11:03 → Rate limit, auth, and recipe-save guards are correctly implemented
 
 **Rate limit atomicity** — Lua INCR+EXPIRE in a single Redis call correctly prevents the classic double-increment race. Admin role bypasses rate limiting, confirmed in code.
