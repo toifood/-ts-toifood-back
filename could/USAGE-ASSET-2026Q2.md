@@ -10,6 +10,18 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->## ASSET:backend 2026-06-22 11:03 → Three active metric CSVs with clear schemas; daily digest posts to Google Chat with Ollama-summarised log analysis
+## ASSET:usage 2026-06-22 11:51 → Usage instrumentation snapshot June 2026
+
+| Signal | Mechanism | Storage | Coverage |
+|---|---|---|---|
+| Recipe generation | RECIPE-METRIC.csv append | Local `would/` dir | Per-generation: provider, latency, style, pantry %, grocery %, filters, continent, title |
+| Discover feed queries | DISCOVER-METRIC.csv append | Local `would/` dir | Per-query: pantry size, result count, avg match rates |
+| Auth events | AUTH-METRIC.csv append + GitHub push | Local + `ts-toifood-dev` repo | Per-event: method (password/google/apple), success/fail, IP (non-local only) |
+| Daily digest | DIGEST-METRIC.csv append | Local `would/` dir | Daily rollup: recipe count, discover count, provider split, avg latency, memory health |
+| Cook records | PostgreSQL CookRecord table | DB | Per-cook: recipe, status (STARTED/COMPLETED/ABANDONED), pantry/grocery split, servings |
+| AI insights | PostgreSQL UserInsight table | DB | Per-user weekly: 5 categories, suggestion text, status (pending/accepted/dismissed) |
+| App store KPIs | AppStore Connect API + Play Developer Reporting | In-memory cache (1hr) | iOS: installs, sessions, active devices, crashes; Android: crash rate, ANR rate |
+| Request logging | Console via `res.on('finish')` middleware | PM2 stdout | Every request: method, path, status, latency, userId |
 
 **`RECIPE-METRIC.csv`** — Written on every successful recipe generation. Columns: timestamp, userId, requestedProvider, usedProvider, fallback, responseMs, style, filters, pantrySelectedCount, ingredientCount, steps, pantryMatchCount, pantryPct, groceryMatchCount (buggy — see USAGE-ISSUE), totalIngredients, groceryPct (buggy), promptVersion, continent, title. Covers provider split, fallback rate, response latency, pantry efficiency, and cuisine distribution.
 
