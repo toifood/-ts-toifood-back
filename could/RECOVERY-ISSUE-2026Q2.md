@@ -16,6 +16,17 @@ Failure scenarios, single points of failure, retry gaps
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:backend 2026-06-22 11:03 → dump.rdb is committed to repo, recipe/discover CSVs are local-only, and ogImage blobs inflate PostgreSQL backups
+
+**`dump.rdb` committed to git** — The Redis RDB snapshot file is present in the repo root. This is unusual: RDB files contain ephemeral state (rate limit counters, cooldown keys) and should not be version-controlled. It could mislead anyone who does `redis-server` from the repo root expecting a fresh start and instead loads stale state. Should be added to `.gitignore` and removed from the tree.
+
+**Recipe and discover CSVs are local-only** — `would/RECIPE-METRIC.csv` and `would/DISCOVER-METRIC.csv` (and `would/DIGEST-METRIC.csv` from `digest.ts`) are written to disk on the Mac mini and are NOT pushed anywhere. `would/AUTH-METRIC.csv` is pushed to `toifood-dev/ts-toifood-dev` via GitHub API. If the Mac mini disk is wiped, recipe and discover analytics are lost. The `AUTH-METRIC.csv` survives via GitHub.
+
+**`ogImage` blobs in PostgreSQL** — Each shared recipe stores a 1200×630 PNG as a `Bytes` field. At typical PNG sizes (~50-150KB each), with hundreds of shared recipes, this can add significant volume to backups. If selectively restoring tables, ensure `ogImage` is included in the `Recipe` restore — omitting it means shared recipe OG image previews will show the placeholder instead.
+
+**Redis restart recovery** — All Redis keys are ephemeral: rate limit counters (1-hour TTL), insight cooldowns (7-day TTL). Redis restart resets all, which means: (a) users get fresh rate limit quota immediately after restart, (b) insight analysis may re-run sooner than 7 days for all users. Neither is catastrophic.
+
+**Cloudflare Tunnel** — If the tunnel client (`cloudflared`) crashes, the public endpoint `toifood.co.nz` becomes unreachable even though the Node process is healthy. The tunnel should be managed by pm2 or launchd on the `jayreck` account.
 ## ISSUE:recovery 2026-06-13 18:11 → Ollama is a single point of failure with no automatic provider failover
 
 Ollama (`qwen2.5:7b`) is the default AI provider running on a single Mac mini. If Ollama crashes or the machine reboots, all recipe generation for the default provider fails hard — there is no automatic fallback to Claude or OpenAI when Ollama times out. The 65s `AbortSignal.timeout` prevents indefinite hangs but returns a hard error with no retry. The `/health` endpoint returns `{ status: "ok" }` unconditionally — it does not probe DB connectivity, Redis availability, or Ollama reachability, so a health-check-based load balancer would miss real outages. Email delivery has no retry: if Gmail rejects the SMTP connection, the verification/reset token is stored in DB but the email is silently lost with no user notification.
