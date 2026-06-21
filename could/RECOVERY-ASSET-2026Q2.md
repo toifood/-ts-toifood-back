@@ -16,6 +16,18 @@ Retry logic, circuit breakers, backup mechanisms
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:recovery 2026-06-22 11:51 → Recovery posture snapshot June 2026
+
+| Failure scenario | Current behaviour | Recovery path |
+|---|---|---|
+| Redis down | Rate limits bypassed (fail open); insight cooldown bypassed (runaway Ollama) | Manual Redis restart; no automatic fallback |
+| Ollama down/hung | Claude fallback fires for users who requested Claude; Ollama users get 65s timeout then 500 | Ollama process restart via PM2 |
+| Claude API error | Falls back to Ollama with `fallback=true` logged | Automatic; monitored via RECIPE-METRIC.csv |
+| GitHub API down | Auth metric rows dropped silently (warn only) | No recovery; data lost |
+| PostgreSQL down | All API endpoints fail with 500; no fallback | Manual DB restart |
+| PM2 crash | Mac mini auto-restarts via PM2 daemon; `restart_time` counter increments | Monitored via `!status` Slack command |
+| Account delete crash mid-sequence | Orphaned user record or orphaned relations | Manual DB cleanup required; no automated repair |
+| YouTube quota exhausted | `findRecipeVideo` returns null; recipe saved without videoId | Graceful null; no alert fired |
 ## ASSET:backend 2026-06-22 11:03 → Auth metrics offsite, all primary data in PostgreSQL, Redis fully ephemeral
 
 **PostgreSQL is the single source of truth** — All durable data (users, recipes, pantry, lists, cook records, insights, flows) is in PostgreSQL. A full pg_dump covers everything needed to restore user data and recipe history.
