@@ -16,6 +16,15 @@ Breaking schema changes, missing rollback, data loss risk
 PATHS:
 prisma/
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:backend 2026-06-22 11:03 → One migration since last entry: UserInsight unique constraint dropped; no new models or columns
+
+Since the 2026-06-13 entry, one migration has landed:
+
+**`20260614000000_insights_drop_unique_add_history`** — Drops `@@unique([userId, category])` from `UserInsight` and replaces it with `@@index([userId, category])`. The schema in `prisma/schema.prisma` now shows only the index. The `runInsightAnalysis` function in `src/services/ai/insights.ts` was updated in the same change: it now manually queries for an existing pending insight per category and calls `update` if found, `create` if not — replacing what was previously enforced by the DB unique constraint.
+
+**Risk**: Any restore that applies the old schema (with the unique constraint) would fail to insert a second insight for the same category when the unique constraint is present. The migration correctly removes it. Restore checklist should confirm that `UserInsight` does NOT have a unique constraint on `(userId, category)` after restore.
+
+**No new models** since 2026-06-13. No new columns on existing models. The schema in this state has these models: `User`, `Recipe`, `RecipeReview`, `SavedList`, `SavedListItem`, `DietaryPreference`, `PantryItem`, `Flow`, `UserFlowView`, `UserInsight`, `CookRecord`, `PasswordResetToken`, `EmailVerificationToken`. Enums: `UserRole` (free/premium/admin), `FlowTrigger` (first_login/manual), `CookStatus` (STARTED/COMPLETED/ABANDONED).
 ## ISSUE:migrate 2026-06-13 18:11 → No rollback scripts; destructive drops in recent migrations risk data loss
 
 Three migrations have dropped data irreversibly: `20260414_remove_favourite_table`, `20260417014518_remove_recipe_match_columns`, and `20260530_add_updated_at_drop_flowstep`. None have corresponding rollback SQL. Prisma does not generate down migrations, and no manual rollback scripts exist in the repo. The `CookRecord` model stores `ingredients`, `pantryItems`, and `groceryItems` as unvalidated `Json` columns — a silent application-layer schema change (e.g. renaming a key) would corrupt stored records without a migration. No seed scripts exist, so a fresh database after a failed migration leaves the app in an indeterminate state with no recovery path.
