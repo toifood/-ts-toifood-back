@@ -16,6 +16,22 @@ Migration tooling, seed scripts, rollback coverage
 PATHS:
 prisma/
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:backend 2026-06-22 11:03 → Full schema snapshot as of 2026-06-22; migration history complete through 20260614
+
+All 18 migrations in `prisma/migrations/` from `20260330025042_init` through `20260614000000_insights_drop_unique_add_history` are present and sequential. `migration_lock.toml` references `provider = "postgresql"`.
+
+**Current model inventory:**
+- `User` — id, email, name, googleId, appleId, passwordHash, defaultServings, emailVerified, role (UserRole), recipeStyle, continentPreferences (String[]), profileVisibility (Json), ageRange, gender, preferencesUpdatedAt, createdAt, updatedAt
+- `Recipe` — id, userId, title, description, ingredients (String[]), steps (String[]), servings, dietaryTags (String[]), emoji, provider, recipeStyle, userPreferences (String[]), mealType, pantryUsed (String[]), cookTime, continent, shareToken (unique), ogImage (Bytes?), videoId, descriptionNote, ingredientNote, methodNote, createdAt, updatedAt
+- `RecipeReview` — id, userId, recipeId, stars, createdAt; unique(userId, recipeId)
+- `SavedList` / `SavedListItem` — composite PK (listId, recipeId) on items
+- `DietaryPreference`, `PantryItem` — per-user filter and ingredient rows
+- `Flow`, `UserFlowView` — onboarding flow system; unique(userId, flowId)
+- `UserInsight` — id, userId, category, suggestion, data (Json), status, createdAt, updatedAt, resolvedAt; index(userId, category) [not unique]
+- `CookRecord` — id, userId, recipeId, status (CookStatus), startedAt, completedAt, updatedAt, ingredientCount, pantryCount, groceryCount, ingredients/pantryItems/groceryItems (Json), servings
+- `PasswordResetToken`, `EmailVerificationToken` — token (unique), userId, expiresAt
+
+**Enums:** `UserRole` (free/premium/admin), `FlowTrigger` (first_login/manual), `CookStatus` (STARTED/COMPLETED/ABANDONED)
 ## ASSET:migrate 2026-06-13 18:11 → 34 ordered migrations with consistent naming and cascade-aware schema
 
 34 migration SQL files are present, ordered by timestamp with descriptive names. `migration_lock.toml` pins the provider to PostgreSQL, preventing accidental dialect drift. Recent models (`CookRecord`, `SavedList`, `PantryItem`, `UserFlowView`, `RecipeReview`, `UserInsight`) correctly use `onDelete: Cascade` on user-owned relations, ensuring clean cleanup on account deletion. The `@@unique` constraint on `PantryItem(userId, ingredient)` prevents duplicates at the DB layer. README documents `prisma migrate deploy` as the deploy command and includes the two-step `prisma generate` + `migrate deploy` setup flow.
