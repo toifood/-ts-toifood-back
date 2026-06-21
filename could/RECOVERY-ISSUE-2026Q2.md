@@ -16,6 +16,17 @@ Failure scenarios, single points of failure, retry gaps
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:recovery 2026-06-22 11:51 → Redis failure bypasses rate limits and triggers runaway insight Ollama calls; account delete is non-atomic
+
+**Redis failure — cascading effect**: When Redis is unavailable, `recipeGenerateRateLimit()` catches the error and calls `next()` (fail open) — all rate limits are bypassed. Simultaneously, `runInsightAnalysis()` uses a Redis `SET NX` as the weekly cooldown gate; if Redis is down, the gate always passes and every recipe save triggers 5 Ollama API calls for every user, potentially saturating the local Ollama process (which already uses a serial queue). These two failure modes compound each other: no rate limiting + maximum Ollama load simultaneously.
+
+**Account delete non-atomic**: `DELETE /users/me` performs 5 sequential Prisma operations without a transaction. A server crash between `recipe.deleteMany` and `user.delete` leaves the user record with no recipes and no way to log in (token valid but data gone). A Prisma `$transaction` wrapping all deletes would prevent this.
+
+**Auth metrics silent loss**: `pushRowToGitHub()` retries once on 409 then silently drops the row. Under concurrent auth load (multiple logins in the same second), the optimistic concurrency model will see repeated 409s that exhaust retries. Auth event data is permanently lost with only a `console.warn`.
+
+**Ollama 65s hold**: If Ollama hangs (model loading, OOM), recipe generate requests hold an open Express connection for 65 seconds before timing out. Under concurrent load, this can exhaust the Node.js connection pool. The serial queue in `OllamaProvider` means only one request runs at a time, but timed-out connections are not freed from the queue.
+
+**Digest depends on PM2 process name**: `src/digest.ts` and `src/slack-bot.ts` run `pm2 logs toifood-back --lines N`. If the PM2 process is renamed or the digest is run outside PM2, all log queries return empty strings silently.
 ## ISSUE:backend 2026-06-22 11:03 → dump.rdb is committed to repo, recipe/discover CSVs are local-only, and ogImage blobs inflate PostgreSQL backups
 
 **`dump.rdb` committed to git** — The Redis RDB snapshot file is present in the repo root. This is unusual: RDB files contain ephemeral state (rate limit counters, cooldown keys) and should not be version-controlled. It could mislead anyone who does `redis-server` from the repo root expecting a fresh start and instead loads stale state. Should be added to `.gitignore` and removed from the tree.
