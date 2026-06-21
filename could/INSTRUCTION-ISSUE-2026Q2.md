@@ -16,6 +16,22 @@ Undocumented APIs, missing env vars, unclear onboarding steps
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:backend 2026-06-22 11:03 → storeReport.ts is broken, daily digest depends on pm2 + cross-account file, and auth metric GitHub push token is silently optional
+
+**`storeReport.ts` is broken and should not be run** — References `-ARCHIVE/-WOULD/` paths that don't exist. If this script is registered in any pm2, cron, or CI job, it will fail on `fs.readFileSync`. The `could/USAGE-*` files are the current target for store KPI entries — `storeReport.ts` needs to be updated to write to `could/PRICE-ISSUE-2026Q2.md` and `could/PRICE-ASSET-2026Q2.md` (or `could/USAGE-*`) if it is to be revived.
+
+**Daily digest requires `GOOGLE_CHAT_WEBHOOK_URL`** — `src/digest.ts` posts to Google Chat. If this env var is absent, it logs a warning and silently skips the post. The digest also reads `/Users/jayagent/.openclaw/logs/infra_health.log` across accounts. Both failures degrade gracefully but mean the digest may arrive empty without any alert.
+
+**`TOIFOOD_CROSS_REPO_TOKEN` for auth metrics** — `routes/auth.ts` pushes each auth event row to `toifood-dev/ts-toifood-dev/would/AUTH-METRIC.csv` via GitHub API. If the token is absent or expired, the push is silently skipped (error caught, not re-thrown). The local `would/AUTH-METRIC.csv` is always written and is the authoritative copy.
+
+**Deploy workflow** — Production on Mac mini:
+1. `git pull` in the repo dir
+2. `npm run build` → outputs to `dist/`
+3. `pm2 restart toifood-back`
+
+Prisma schema changes require additionally running: `npx prisma generate` (and the raw SQL migration on the live DB) before the build step.
+
+**Redis cross-dependency** — Both `rateLimit.ts` and `insights.ts` connect to Redis. Rate limit failure is graceful (allows request). Insight failure is also graceful (fire-and-forget). No action needed on Redis restart — all state is short-lived TTL keys.
 ## ISSUE:instruction 2026-06-13 18:11 → README missing 16 env vars and omits all routes added since initial launch
 
 The README `.env` table documents 10 variables but the codebase uses at least 26. Missing: `CORS_ORIGIN`, `APP_URL`, `MIN_APP_VERSION`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN`, `SLACK_WEBHOOK_URL`, `GOOGLE_CHAT_WEBHOOK_URL`, `REDIS_URL`, `APPSTORE_KEY_ID`, `APPSTORE_ISSUER_ID`, `APPSTORE_PRIVATE_KEY`, `APPSTORE_APP_ID`, `PLAY_SERVICE_ACCOUNT_JSON`, `PLAY_PACKAGE_NAME`. The API section documents only Auth, Recipes, Favourites (removed), and Users — missing `/records`, `/insights`, `/lists`, `/flows`, `/store-metrics`, and `/admin` routes entirely. The versioned `/1-1-1/` prefix is undocumented. `src/digest.ts` and `src/storeReport.ts` have no run instructions. Apple Sign In audience `com.toifood.app` is hardcoded with no operator documentation.
