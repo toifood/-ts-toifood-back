@@ -10,6 +10,17 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->## ASSET:backend 2026-06-22 11:03 → Rate limit structure, role hierarchy, and store metric fetchers are clean and stable
+## ASSET:price 2026-06-22 11:51 → Cost exposure snapshot June 2026
+
+| Service | Usage pattern | Cost type | Risk level |
+|---|---|---|---|
+| Claude Haiku 4.5 | Up to 2/hr (free), 5/hr (premium) per user | Pay-per-token (~$0.002/recipe) | Low — rate-limited |
+| Ollama qwen2.5:7b | Up to 3/hr (free), 10/hr (premium) per user | Self-hosted Mac mini M4 | Zero marginal cost |
+| YouTube Data API v3 | 1–2 calls per recipe generate+save (100 units each) | Free tier 10k units/day quota | Medium — quota exhaustion risk |
+| GitHub API | 2 calls per external auth event (login/register) | Free tier rate limit | Low-Medium — rate limit risk at scale |
+| PostgreSQL | OG images stored as Bytes (~200–500KB each) | Storage/WAL overhead | Medium — grows unbounded |
+| Redis | Rate limiting + insight cooldowns | Self-hosted | Zero marginal cost |
+| Gmail SMTP | Password reset + email verification | Free for low volume | Low |
 
 **LIMITS object** in `rateLimit.ts` is the single source of truth for per-role per-provider quotas. Adding a new tier (e.g., `enterprise`) requires only adding a key to `LIMITS` and a corresponding `UserRole` enum value.
 
