@@ -16,6 +16,19 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:backend 2026-06-22 11:03 → groceryMatchCount metric is wrong, Ollama ignores continentPreferences, and /users/:id/profile is unauthenticated
+
+**`groceryMatchCount` wrong value** (`src/routes/recipes.ts` ~line 286-287) — The metric is intended to count how many recipe ingredients the user needs to buy (i.e., not in pantry). But the code sets:
+```ts
+const groceryMatchCount = pantryUsed.length; // same as pantryMatchCount
+```
+This should be `totalIngredients - pantryUsed.length`. The CSV column `groceryPct` is therefore also incorrect: it computes pantry-match percentage twice rather than the grocery fraction. Any analytics on pantry efficiency derived from this column are skewed.
+
+**Ollama ignores `continentPreferences`** (`src/services/ai/ollama.ts`) — `pickRegion()` is called with no arguments, so Ollama always picks from the full `COUNTRY_REGIONS` pool regardless of the user's continent settings. Claude correctly passes `request.continentPreferences` to `pickRegion()`. Users who set continent preferences get them applied only when using Claude.
+
+**`GET /users/:id/profile` unauthenticated** (`src/routes/users.ts`) — The public profile endpoint has no `requireAuth` middleware. Any caller who knows or enumerates a user CUID can request their profile and receive name, role, recipe counts, and dietary/cuisine breakdowns (subject to privacy settings). The privacy settings gate field values but cannot prevent confirming that an account exists.
+
+**`storeReport.ts` will crash on run** — Reads and writes to `-ARCHIVE/-WOULD/usage-issue-v1.md` and `-ARCHIVE/-WOULD/usage-asset-v1.md` using `fs.readFileSync`, which will throw `ENOENT` because these directories don't exist in the current repo. If `storeReport.ts` is part of any cron or pm2 job, it will error silently or crash.
 ## ISSUE:bug 2026-06-13 18:11 → Google OAuth callback URL ignores version prefix; insights Redis throws are unhandled
 
 In `src/routes/auth.ts`, the Google OAuth `callbackURL` is `${APP_URL}/auth/google/callback` — the legacy path. The versioned route is `/1-1-1/auth/google/callback`. If legacy routes are removed, Google OAuth silently breaks. In `src/services/ai/insights.ts`, the Redis `set(..., 'NX')` call can throw on a connection error; this throw is not caught, causing `runInsightAnalysis` to produce an unhandled rejection mid-recipe-generation. In `cookRecords.ts`, `stemMatch` uses `as.includes(bs)` substring inclusion — a short pantry entry like `"oil"` incorrectly matches recipe ingredients `"foil"` or `"broil"`. `src/storeReport.ts` references a hardcoded `-ARCHIVE/-WOULD/` path that does not exist in the repo and crashes immediately on any fresh checkout.
