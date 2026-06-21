@@ -16,6 +16,17 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:backend 2026-06-22 11:03 → Rate limit, auth, and recipe-save guards are correctly implemented
+
+**Rate limit atomicity** — Lua INCR+EXPIRE in a single Redis call correctly prevents the classic double-increment race. Admin role bypasses rate limiting, confirmed in code.
+
+**HTML escape in password reset forms** — `escHtml()` is applied to all user-supplied strings rendered in HTML responses (`/auth/reset-password-redirect`, `/auth/reset-password-form`). Token value in hidden input uses `${safeToken}` (escaped). XSS vector is closed.
+
+**Duplicate recipe guard** — `POST /recipes` checks for an existing recipe with the same title created in the last 24 hours before saving. This prevents accidental double-saves from network retries without blocking legitimate same-title saves across days.
+
+**Apple JWT verified correctly** — `identityToken` is decoded to extract `kid`, matched against cached Apple JWKS, and verified using Node's native `crypto.createPublicKey`. Audience is validated as `com.toifood.app`, issuer as `https://appleid.apple.com`.
+
+**Auth metric IP filtering** — Local IPs (`127.0.0.1`, `::1`, `::ffff:127.0.0.1`) are excluded from auth metric logs, so internal health checks and local test calls don't pollute the CSV.
 ## ASSET:bug 2026-06-13 18:11 → Structured error codes, multi-layer emoji fallbacks, and defensive AI output parsing
 
 All auth and API routes return structured error objects with `code` strings (`MISSING_FIELDS`, `EMAIL_EXISTS`, `TOKEN_INVALID`, `PANTRY_LIMIT_EXCEEDED`, `LISTS_LIMIT_EXCEEDED`, etc.), enabling reliable client-side error handling without string matching. `extractFoodEmoji` has a four-layer fallback (AI emoji gate → title keyword inference → ingredient inference → `🍽️`), preventing empty emoji fields. `OllamaProvider` strips CJK characters from all string fields defensively against `qwen2.5` bleed-through. `ClaudeProvider` strips markdown code fences before JSON parsing. The rate limiter catch block logs the Redis error and allows the request through rather than returning 500 to users.
