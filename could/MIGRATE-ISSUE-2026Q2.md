@@ -16,6 +16,15 @@ Breaking schema changes, missing rollback, data loss risk
 PATHS:
 prisma/
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:migrate 2026-06-22 11:51 → DietaryPreference table should migrate to String[] on User; storeReport.ts targets legacy archive path
+
+**Migration 1 — DietaryPreference → User.dietaryPreferences String[]**: The `DietaryPreference` model is a join table with no extra relations (just `userId + filter + timestamps`). `continentPreferences` was already migrated to a `String[]` column on `User`. Consolidating dietary preferences the same way would eliminate 3–5 extra queries per request (deleteMany + createMany on every preference save) and simplify all read paths from `include: { preferences: true }` to a simple column select.
+
+**Migration 2 — Legacy route prefix retirement**: The dual `/` and `/1-1-1/` route registration in `src/index.ts` doubles the Express route table. A migration plan with a concrete deprecation date tied to minimum app version (`MIN_APP_VERSION`) would allow removing the legacy block once old builds are below a threshold share.
+
+**Migration 3 — storeReport.ts archive path**: `src/storeReport.ts` writes to `-ARCHIVE/-WOULD/usage-issue-v1.md` and `-ARCHIVE/-WOULD/usage-asset-v1.md` — a path pattern that doesn't match the current `could/` convention used everywhere else. This script either needs migration to write to `could/USAGE-ISSUE-2026Q2.md` / `could/USAGE-ASSET-2026Q2.md`, or it's dead code.
+
+**Migration 4 — Insights to async queue**: The weekly per-user insight analysis fires 5 Ollama calls synchronously in `Promise.allSettled` after every recipe save. As users grow, this creates concurrent Ollama load spikes. Migrating to a Redis-backed task queue (BullMQ) would spread the load and decouple generation latency from the save response.
 ## ISSUE:backend 2026-06-22 11:03 → One migration since last entry: UserInsight unique constraint dropped; no new models or columns
 
 Since the 2026-06-13 entry, one migration has landed:
