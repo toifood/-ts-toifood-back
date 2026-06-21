@@ -16,6 +16,15 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:bug 2026-06-22 11:51 → groceryMatchCount metric bug; emoji inference lastIndexOf logic inverts specificity
+
+**Bug 1 — groceryMatchCount is wrong** (`src/routes/recipes.ts:1659`): `groceryMatchCount` is assigned `pantryUsed.length` — the count of pantry items used — instead of the count of recipe ingredients not sourced from pantry. The downstream `groceryPct` becomes `pantryUsed / totalIngredients` (pantry utilisation) rather than the intended grocery requirement rate. Both `pantryPct` and `groceryPct` columns in the RECIPE-METRIC.csv and in the generate response `pantryStats` are therefore measuring the same thing.
+
+**Bug 2 — emoji inference uses `lastIndexOf` which defeats specificity ordering** (`src/services/ai/provider.ts:1007`): `inferEmojiFromTitle` iterates `TITLE_KEYWORD_EMOJI` (ordered most-specific first) using `lastIndexOf` and keeps whichever keyword appears latest in the string. A title like "Lemon Chicken Stir-fry" matches "lemon" at pos 0 and "stir-fry" at pos 14 — stir-fry wins because it appears later, overriding the more-specific match. Should use `indexOf` (first occurrence) or compare match length.
+
+**Bug 3 — DELETE /users/me returns 401 for missing user** (`src/routes/users.ts:2371`): When a valid JWT token belongs to a deleted user, `GET /users/me` responds with `status(401)` and code `USER_NOT_FOUND`. 401 means unauthorised; the token is valid but the account is gone — the correct status is 404.
+
+**Bug 4 — DELETE /users/me is non-atomic**: Sequential deletes across `DietaryPreference`, `PasswordResetToken`, `EmailVerificationToken`, `Recipe`, then `User` are not wrapped in a transaction. A crash mid-sequence leaves orphaned data with no cleanup path.
 ## ISSUE:backend 2026-06-22 11:03 → groceryMatchCount metric is wrong, Ollama ignores continentPreferences, and /users/:id/profile is unauthenticated
 
 **`groceryMatchCount` wrong value** (`src/routes/recipes.ts` ~line 286-287) — The metric is intended to count how many recipe ingredients the user needs to buy (i.e., not in pantry). But the code sets:
