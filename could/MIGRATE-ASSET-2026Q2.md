@@ -16,6 +16,16 @@ Migration tooling, seed scripts, rollback coverage
 PATHS:
 prisma/
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:migrate 2026-06-22 11:51 → Migration candidates snapshot June 2026
+
+| Migration | Effort | Impact | Blocker |
+|---|---|---|---|
+| DietaryPreference → User.String[] | Medium (1 migration + query updates) | Removes 3–5 queries per pref-save | None |
+| Legacy route prefix retirement | Low (delete ~15 lines) | Halves Express route table | MIN_APP_VERSION gate reaching target threshold |
+| storeReport.ts archive path → could/ | Low | Aligns with current logging convention | None |
+| Insights → BullMQ async queue | Medium | Decouples recipe save latency from Ollama load | Redis already present |
+| 20 migrations → squash (dev only) | Low | Cleaner migration history | Only worthwhile on fresh dev DB setup |
+| Auth metrics → dedicated service | High | Removes GitHub API dependency from hot path | Requires alternative storage target |
 ## ASSET:backend 2026-06-22 11:03 → Full schema snapshot as of 2026-06-22; migration history complete through 20260614
 
 All 18 migrations in `prisma/migrations/` from `20260330025042_init` through `20260614000000_insights_drop_unique_add_history` are present and sequential. `migration_lock.toml` references `provider = "postgresql"`.
