@@ -16,6 +16,23 @@ Retry logic, circuit breakers, backup mechanisms
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:backend 2026-06-22 11:03 → Auth metrics offsite, all primary data in PostgreSQL, Redis fully ephemeral
+
+**PostgreSQL is the single source of truth** — All durable data (users, recipes, pantry, lists, cook records, insights, flows) is in PostgreSQL. A full pg_dump covers everything needed to restore user data and recipe history.
+
+**Auth metrics are offsite** — `routes/auth.ts` pushes each auth metric row to `toifood-dev/ts-toifood-dev/would/AUTH-METRIC.csv` via GitHub API (with 2-attempt retry on 409 conflict). The remote copy lags by at most one failed commit but covers login/register events for audit purposes.
+
+**Redis is fully ephemeral** — Rate limit keys (1h TTL) and insight cooldown keys (7d TTL). No durable data in Redis. Restart-safe.
+
+**OG image fallback** — `placeholderOgImage` is generated at server startup in memory. If the DB `ogImage` field is null (old recipes), the placeholder is served. No external image storage dependency.
+
+**Restore sequence:**
+1. Restore PostgreSQL from backup (`pg_restore` or `psql < dump.sql`)
+2. Run `npx prisma generate` (schema already matches if dump is current)
+3. Do NOT run `npx prisma migrate deploy` on a restored DB that already has all migrations applied — this would attempt to re-apply and fail
+4. Start Redis fresh (`redis-server` with empty/no RDB)
+5. Start Node.js (`pm2 start dist/src/index.js --name toifood-back`)
+6. Verify Cloudflare Tunnel is running
 ## ASSET:recovery 2026-06-13 18:11 → Timeout guards, Redis fail-open, and graceful process error handlers in place
 
 All AI provider calls use `AbortSignal.timeout` (65s Ollama, 30s Claude) to prevent indefinite hangs. Redis clients are configured with `enableOfflineQueue: false` and exponential `retryStrategy` (max 2s) — rate limiting fails open with a `console.warn` rather than blocking user requests. The stats endpoint caches results in memory and serves stale data on DB error. `process.on('unhandledRejection')` and `process.on('uncaughtException')` handlers in `index.ts` log errors and prevent silent process death. Apple JWKS keys are cached in-memory for 1 hour to reduce external dependency calls and survive transient Apple API hiccups.
