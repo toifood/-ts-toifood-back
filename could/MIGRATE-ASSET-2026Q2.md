@@ -16,6 +16,19 @@ Migration tooling, seed scripts, rollback coverage
 PATHS:
 prisma/
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:migrate 2026-06-23 11:23 → 28 Prisma migrations to PostgreSQL; no seed scripts; no rollback scripts; dump.rdb present
+
+- Total migrations: 28 (2026-03-30 → 2026-06-14)
+- Provider: PostgreSQL only (`migration_lock.toml` enforces this)
+- Models: User, Recipe, RecipeReview, SavedList, SavedListItem, DietaryPreference, PantryItem, Flow, UserFlowView, UserInsight, CookRecord, PasswordResetToken, EmailVerificationToken
+- Enums: UserRole (free/premium/admin), FlowTrigger (first_login/manual), CookStatus (STARTED/COMPLETED/ABANDONED)
+- Recent Q2 2026 additions: UserInsight (insights engine), CookRecord (cook sessions), ageRange/gender on User, continentPreferences on User, updatedAt on Recipe
+- Destructive migrations: remove_favourite_table, remove_recipe_match_columns, add_updated_at_drop_flowstep
+- No seed scripts
+- No down/rollback migrations
+- `dump.rdb` present at repo root (Redis snapshot)
+
+---
 ## ASSET:backend 2026-06-22 20:06 -> Disciplined migration cadence and additive-first pattern reflect low-risk schema change practice
 
 **Small-scope incremental migrations**
