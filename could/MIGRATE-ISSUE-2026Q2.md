@@ -16,6 +16,16 @@ Breaking schema changes, missing rollback, data loss risk
 PATHS:
 prisma/
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:backend 2026-06-22 20:06 -> Three migration candidates — CSV metrics to PostgreSQL, OG images to object storage, auth GitHub sync to DB writes
+
+**1. Recipe/discover/auth/digest metrics from local CSV to a PostgreSQL event table**
+`RECIPE-METRIC.csv`, `DISCOVER-METRIC.csv`, `AUTH-METRIC.csv`, and `DIGEST-METRIC.csv` are appended to disk on the Mac Mini. They are: not queryable without SSH, lost if the disk is reformatted, and incompatible with multi-instance deployment. A `RecipeEvent` model with columns mirroring the CSV header would make metrics queryable in Prisma, retained in pg_dump, and immediately compatible with the existing Prisma connection. The write functions in `recipes.ts` and `auth.ts` are already centralised — the migration surface is small.
+
+**2. `Recipe.ogImage Bytes?` from PostgreSQL BYTEA to object storage URL**
+Each shared recipe stores a ~150–400KB PNG directly in the `ogImage` column. The serving route (`GET /recipes/public/:token/og-image`) reads and streams `recipe.ogImage`. Switching to an S3/R2 URL only requires changing what the column stores and what the route returns — the placeholder fallback at `src/routes/recipes.ts:904` handles missing images already. A one-time backfill job would upload existing BLOBs and write URLs back.
+
+**3. `pushRowToGitHub` auth metric sync replaced by direct PostgreSQL insert**
+`src/routes/auth.ts:958-1003` appends auth event rows to `toifood-dev/ts-toifood-dev` via GitHub Contents API on every non-local auth event, with one retry on 409. This places a GitHub API call on the hot login/register path. A GitHub rate-limit or timeout silently swallows the event. Storing auth events in a `AuthEvent` table removes the external dependency and the retry logic.
 ## ISSUE:migrate 2026-06-22 11:51 → DietaryPreference table should migrate to String[] on User; storeReport.ts targets legacy archive path
 
 **Migration 1 — DietaryPreference → User.dietaryPreferences String[]**: The `DietaryPreference` model is a join table with no extra relations (just `userId + filter + timestamps`). `continentPreferences` was already migrated to a `String[]` column on `User`. Consolidating dietary preferences the same way would eliminate 3–5 extra queries per request (deleteMany + createMany on every preference save) and simplify all read paths from `include: { preferences: true }` to a simple column select.
