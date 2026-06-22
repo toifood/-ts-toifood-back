@@ -10,6 +10,19 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->## ISSUE:backend 2026-06-22 11:03 → pluralStem duplicated with divergent logic, storeReport.ts references archived paths, and no runtime request-body validation
+## ISSUE:backend 2026-06-22 20:06 -> Four new architectural concerns — unauthenticated chat bot, missing register verification email, DIGEST-METRIC never surfaced, emoji lastIndexOf picks later-occurring general terms
+
+**1. `/api/chat` POST has no authentication**
+`src/routes/chat.ts` registers the Google Chat bot endpoint without `requireAuth` middleware and without Google Chat request signature verification. `!status`, `!logs`, and `!metrics` commands expose PM2 process names, memory usage, recent error log lines, and today's metric counts to any HTTP client that discovers the URL. The route is registered under both `/1-1-1/api/chat` and legacy `/chat`.
+
+**2. `POST /auth/register` never sends a verification email**
+`src/routes/auth.ts:1161-1169` creates the user (`emailVerified: false`), issues a JWT, and returns 201 — `sendVerificationEmail` is imported but never called in this handler. Users register and receive a fully-functional token without verifying their email. The only path to a verification link is manually calling `POST /auth/resend-verification`.
+
+**3. `DIGEST-METRIC.csv` is written but never read or reported**
+`src/digest.ts` calls `appendDigestLog` on every daily run, writing recipe counts, avg response ms, Ollama status, and memory metrics to `would/DIGEST-METRIC.csv`. This file is never read back by any route, chat command, or the digest itself. The structured data is dark — operators cannot access it without SSHing to the Mac Mini.
+
+**4. `inferEmojiFromTitle` uses `lastIndexOf` — later-occurring general terms can beat earlier specific ones**
+`src/services/ai/provider.ts:3390-3402` picks the keyword with the highest `lastIndexOf` position in the title string. For "Beef Chili Noodle Soup", `soup` at pos 19 beats `noodle` at pos 11 and `chili` at pos 5 — returning 🍲 instead of 🍜. The array ordering comment ("most-specific first") only breaks ties at equal positions, not across positions.
 ## ISSUE:analysis 2026-06-22 11:51 → Dual route registration and auth-metrics GitHub write create operational risk
 
 All routes are registered twice — once under `/1-1-1/...` (versioned) and once at the legacy bare path — with no plan or timeline for retiring the old prefix. `src/auth.ts` fires a GitHub API GET+PUT on every login/register event to push rows to `ts-toifood-dev`; concurrent auth bursts create 409 races (retried once then silently dropped), meaning auth metric data can be silently lost. The `initPlaceholder()` OG image call at startup catches all errors and leaves `placeholderOgImage` as `null`, so failed startups serve an empty buffer for shared recipe images. The `groceryMatchCount` metric in `src/routes/recipes.ts` is set to `pantryUsed.length` instead of the count of recipe ingredients not in the pantry, meaning `groceryPct` in the CSV is actually a duplicate of the pantry utilization rate rather than the grocery requirement rate. The discover feed `$queryRaw` lateral join on `PantryItem.ingredient` has no covering index, which will degrade as the pantry table grows.
