@@ -16,6 +16,17 @@ Existing docs, README completeness, inline documentation
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:instruction 2026-06-23 11:23 → .env.example covers 14 core vars; scripts/macmini-setup.sh present; shared types package
+
+- `.env.example` documents: DATABASE_URL, JWT_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, AI_PROVIDER, OLLAMA_BASE_URL, OLLAMA_MODEL, OPENAI_API_KEY, ANTHROPIC_API_KEY, PORT, GMAIL_USER, GMAIL_APP_PASSWORD, APP_URL, GOOGLE_CHAT_WEBHOOK_URL, TOIFOOD_CROSS_REPO_TOKEN (15 entries)
+- `scripts/macmini-setup.sh`: onboarding script for the Mac Mini deployment environment
+- `shared/` workspace package: `shared/src/index.ts` exports `DietaryFilter` (enum), `RecipeStyle` (enum), `GenerateRecipeRequest`, `SaveRecipeRequest`, `GenerateRecipeResponse` — shared contract between back and web/mobile
+- `tsconfig.json` with `paths` aliases configured
+- `app.json` present (likely Expo/React Native config for companion app)
+- No README.md, no API reference, no route map, no deployment guide, no runbook
+- Inline comments are minimal — mostly structural section separators (e.g. `// ── Admin guard`)
+
+---
 ## ASSET:backend 2026-06-22 20:06 -> Prompt versioning constants and shared builder exports are the right pattern for multi-provider prompt management
 
 **`PROMPT_VERSION` constant per provider (`src/services/ai/claude.ts:2892`, `src/services/ai/ollama.ts:3835`)**
