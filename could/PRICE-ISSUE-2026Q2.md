@@ -10,6 +10,14 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->## ISSUE:backend 2026-06-22 11:03 → No server-side purchase receipt validation; premium is admin-granted only; store metrics pipeline reads correctly but doesn't drive role changes
+## ISSUE:backend 2026-06-23 11:23 → No server-level Claude spend cap; YouTube searched twice per recipe; no aggregate quota protection
+
+1. Claude API (claude-haiku-4-5-20251001): called on every `provider=claude` request from premium users, up to 5 times per user per hour. No server-level daily or monthly spend cap exists in code — only per-user hourly Redis limits. Under a large number of concurrent premium users, Claude costs are unbounded.
+2. YouTube Data API v3: `findRecipeVideo` is called once inside `POST /recipes/generate` and potentially a second time inside `POST /recipes` (save) if `clientVideoId` is not passed by the client — up to 2 quota units per recipe lifecycle. YouTube's default quota is 10,000 units/day; no server-level guard prevents exhaustion.
+3. No token usage logging from Anthropic responses (the `usage` field in the API response is not captured) — actual spend per request is invisible in metrics.
+4. On Claude API errors (e.g., rate limit or quota from Anthropic), the failed request still counts as consumed before the Ollama fallback is triggered — cost without benefit.
+
+---
 ## ISSUE:backend 2026-06-22 20:06 -> No IAP receipt validation path exists; admin role implicitly grants premium; continent preferences silently absent for free users
 
 **1. No in-app purchase validation endpoint**
