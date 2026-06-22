@@ -16,6 +16,16 @@ Existing docs, README completeness, inline documentation
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:backend 2026-06-22 20:06 -> Prompt versioning constants and shared builder exports are the right pattern for multi-provider prompt management
+
+**`PROMPT_VERSION` constant per provider (`src/services/ai/claude.ts:2892`, `src/services/ai/ollama.ts:3835`)**
+Both providers define a `PROMPT_VERSION` string (`claude-v5`, `ollama-v5`) recorded in every `RECIPE-METRIC.csv` row. Recipe quality regressions can be correlated to a specific prompt version by filtering the CSV, without needing to cross-reference git history against production timestamps.
+
+**Shared prompt builder exports (`src/services/ai/provider.ts:3429-3451`)**
+`pickRegion`, `buildStyleInstruction`, `buildPantryLine`, and `buildMealTypeLine` are exported and imported by both Claude and Ollama providers. The pattern means continent/style/pantry prompt changes propagate to both providers at once — opting a provider out of a shared building block requires an explicit override, not a separate copy.
+
+**`pluralStem` ingredient matching implemented independently in `cookRecords.ts` and `recipes.ts`**
+`src/routes/cookRecords.ts:3383-3401` has a fuller `pluralStem` with an irregular-plurals table (`leaves→leaf`, `teeth→tooth`, etc.) and an `ee$` invariant guard. `src/routes/recipes.ts:257-268` has a simpler three-rule version. These should converge — the `cookRecords.ts` version is more correct and should be the canonical one, extracted to a shared utility.
 ## ASSET:instruction 2026-06-22 11:51 → Documentation coverage snapshot June 2026
 
 | Area | Status |
