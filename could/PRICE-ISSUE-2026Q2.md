@@ -10,6 +10,16 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->## ISSUE:backend 2026-06-22 11:03 → No server-side purchase receipt validation; premium is admin-granted only; store metrics pipeline reads correctly but doesn't drive role changes
+## ISSUE:backend 2026-06-22 20:06 -> No IAP receipt validation path exists; admin role implicitly grants premium; continent preferences silently absent for free users
+
+**1. No in-app purchase validation endpoint**
+`src/services/appstore.ts` uses the App Store Connect API only for analytics metrics — there is no endpoint that validates a StoreKit receipt or Server Notification and upgrades `User.role` to `premium`. The same is true for Play Store: `playstore.ts` only queries crash/ANR rates. Premium role assignment has no automated path and must be set directly in the database. A paying customer cannot self-serve a role upgrade.
+
+**2. `admin` role implicitly grants all premium benefits**
+`src/middleware/rateLimit.ts:2787`: `if (role === "admin") { next(); return; }` bypasses all rate limits. `src/routes/users.ts:1540`: `isPremium: user.role !== "free"` — admin users appear as premium to the client. If an admin account is compromised, the attacker receives unlimited generation and premium UX. Explicitly checking `role === "premium" || role === "admin"` only in the rate-limit bypass (not in `isPremium`) would allow separating the two concerns.
+
+**3. Continent preferences are silently ignored for Ollama (free-tier default)**
+`src/routes/recipes.ts:215`: `const continentPreferences = provider === "claude" ? (user?.continentPreferences ?? []) : []`. Free users generating with Ollama never have their cuisine preferences applied, even if they have set them. The response gives no indication that the preference was ignored — the `continent` field in the response reflects what Ollama randomly selected, not the user's preference.
 ## ISSUE:price 2026-06-22 11:51 → YouTube API quota risk: every generate + save fires a search unit; OG images bloat Postgres
 
 **YouTube quota burn**: `findRecipeVideo` is called in `POST /recipes/generate` unconditionally (no key-absent guard beyond a warn + null return), and again in `POST /recipes` (save) unless `clientVideoId` is passed. YouTube Data API v3 search costs 100 quota units per call; the free tier is 10,000 units/day — 100 generate calls/day exhausts the quota. The generate and save responses already pass `videoId` to the client, so the save re-fetch is redundant if the client always echoes it back. A quota monitor or server-side cache (keyed on recipe title) would reduce burn.
