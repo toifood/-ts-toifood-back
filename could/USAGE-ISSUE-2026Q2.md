@@ -10,6 +10,15 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->## ISSUE:backend 2026-06-22 11:03 → groceryPct in RECIPE-METRIC.csv is incorrect, cook record usage not in any CSV, and DIGEST-METRIC.csv is undocumented
+## ISSUE:backend 2026-06-23 11:23 → Local CSV metrics unqueryable remotely; no funnel event for generate-without-save; CookRecord data uncollected
+
+1. RECIPE-METRIC.csv and DISCOVER-METRIC.csv are written to the local Mac Mini filesystem — not accessible from anywhere except SSH. Only AUTH-METRIC.csv is cross-repo pushed to GitHub. No aggregation layer, no dashboard, no historical trend visible without direct filesystem access.
+2. No event is logged when a user calls `POST /recipes/generate` but never calls `POST /recipes` (save). The generate-to-save conversion rate — a key product health signal — is unobservable from current metrics.
+3. CookRecord tracks starts, completions, and abandons with full ingredient/pantry/grocery breakdown, but there is no admin endpoint or analytics query exposing this data. It is collected in the DB but entirely inaccessible from the API.
+4. The Slack `!metrics` and Google Chat `!metrics` commands show only today's counts — no weekly or monthly trends, no per-provider breakdown in the ops interface.
+5. `UserInsight` accepted vs dismissed rates are stored in the DB but never surfaced — insight effectiveness is unmeasured.
+
+---
 ## ISSUE:backend 2026-06-22 20:06 -> Three usage tracking gaps — DIGEST-METRIC never surfaced, discover count missing from digest post, no retention policy on any CSV
 
 **1. `DIGEST-METRIC.csv` structured rows are written but never read or reported**
