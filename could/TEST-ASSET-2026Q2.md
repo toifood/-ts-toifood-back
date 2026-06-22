@@ -15,6 +15,18 @@ Existing test infrastructure, coverage breadth, CI test setup, test utilities
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:test 2026-06-23 11:23 → No testing framework, no test scripts, no CI config — test infrastructure is at zero
+
+- `package.json` scripts: `dev`, `build`, `start` only — no `test` script
+- devDependencies: nodemon, ts-node, tsconfig-paths, typescript — no testing library present
+- Test files: none (`.spec.ts` and `.test.ts` patterns excluded from tree; none appear in full file listing)
+- CI: no `.github/workflows/` directory in repository tree
+- No test fixtures, factories, seed helpers, or mock utilities
+- `shared/src/index.ts` exports type contracts (`DietaryFilter`, `RecipeStyle`, `GenerateRecipeRequest`) that could anchor contract tests
+- `src/middleware/rateLimit.ts` Redis Lua eval would benefit most from unit testing (complex atomic logic)
+- Recommended starting stack: Vitest (zero-config TS) + supertest (route integration) + testcontainers-pg (real DB isolation) + ioredis-mock (Redis unit tests)
+
+---
 ## ASSET:test 2026-06-13 18:11 → TypeScript compilation and shared typed contracts provide a minimal static verification boundary
 
 `npm run build` (TypeScript compilation) acts as a type-check gate and catches type-level regressions across the entire codebase before deploy. The `shared/` package enforces typed request/response contracts (`GenerateRecipeRequest`, `GenerateRecipeResponse`, `DietaryFilter`, `RecipeStyle`) between frontend and backend at compile time — a contract break fails the build on both sides. The Prisma schema provides a DB-level correctness constraint that `prisma migrate deploy` validates against the live database on each deploy. `tsconfig-paths/register` in the dev startup ensures path aliases resolve correctly at runtime, catching misconfigured imports before they reach production.
