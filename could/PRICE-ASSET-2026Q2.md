@@ -10,6 +10,16 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->## ASSET:backend 2026-06-22 11:03 → Rate limit structure, role hierarchy, and store metric fetchers are clean and stable
+## ASSET:backend 2026-06-22 20:06 -> Per-provider per-user Redis rate limits cleanly enforce the free/premium tier split with observable usage state
+
+**Independent per-provider rate limit keys (`src/middleware/rateLimit.ts:2779`)**
+Keys are namespaced `ratelimit:{userId}:{ollama|claude}` — Ollama and Claude quotas are tracked and exhausted independently. A free user's 3 Ollama uses and 2 Claude uses are metered separately, matching the product intent. The separation means premium upgrade can increase only the relevant provider cap without touching the other.
+
+**`getRecipeUsage` export makes quota state observable without side effects**
+`GET /recipes/usage` calls `getRecipeUsage(userId)`, which reads Redis counters without incrementing them. The client can display remaining uses to the user before they attempt a generation, reducing frustration from unexpected 429s.
+
+**`LIMITS` object isolates tier configuration in one place**
+All tier thresholds are defined in a single `LIMITS` constant at the top of `rateLimit.ts`. Adding a new tier or changing quota numbers requires one line. The fallback `LIMITS[role] ?? LIMITS.free` ensures an unknown role receives the most restrictive limits — a safe default.
 ## ASSET:price 2026-06-22 11:51 → Cost exposure snapshot June 2026
 
 | Service | Usage pattern | Cost type | Risk level |
