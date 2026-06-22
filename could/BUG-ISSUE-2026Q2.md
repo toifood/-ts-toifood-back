@@ -16,6 +16,15 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:bug 2026-06-23 11:23 → Dietary filters silently dropped on Claude→Ollama fallback; hardcoded infra path; two divergent pluralStem implementations
+
+1. `src/routes/recipes.ts` POST /recipes/generate: when Claude fails and Ollama handles the request, `dietaryTags` is set to `[]` in the response (`usedProvider === "claude" ? validFilters : []`). The user's dietary restrictions are silently not applied — no warning is returned to the client, meaning a user with e.g. "Vegan" may receive a non-vegan recipe without any indication.
+2. `src/digest.ts:224` hardcodes `/Users/jayagent/.openclaw/logs/infra_health.log` — will always return "infra_health.log not found" on any deployment except the specific named machine.
+3. `pluralStem` is implemented twice: a full version in `src/routes/cookRecords.ts` (handles irregular plurals, `ee` invariants) and a simplified regex-only version inline in `src/routes/recipes.ts`. The two diverge for edge cases ("geese", "cheese", "feet"), causing inconsistent pantryUsed matching between cook records and recipe saves.
+4. `src/services/ai/insights.ts`: `UserInsight` has no DB-level unique constraint on `(userId, category, status=pending)`. The `findFirst + update/create` pattern has a race window if two recipe saves trigger `runInsightAnalysis` concurrently for the same user, potentially creating duplicate pending insights per category.
+5. `dump.rdb` is committed to the repository root — a Redis RDB snapshot that may contain production rate-limit counters or cached keys.
+
+---
 ## ISSUE:backend 2026-06-22 20:06 -> Three confirmed bugs — register skips verification email, Play Store API path wrong, chat bot unauthenticated
 
 **1. `POST /auth/register` never sends a verification email**
