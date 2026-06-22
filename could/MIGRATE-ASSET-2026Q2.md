@@ -16,6 +16,16 @@ Migration tooling, seed scripts, rollback coverage
 PATHS:
 prisma/
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:backend 2026-06-22 20:06 -> Disciplined migration cadence and additive-first pattern reflect low-risk schema change practice
+
+**Small-scope incremental migrations**
+The 17 migrations from `20260330` to `20260614` each address a single model or concern (`add_cook_time_to_recipe`, `add_apple_id`, `add_continent_preferences`). No migration rewrites multiple models simultaneously. This keeps migration rollback surface small and review time low.
+
+**Additive-first in `insights_drop_unique_add_history` (`20260614000000`)**
+The most recent migration converted the `UserInsight` unique constraint to an `@@index([userId, category])` — dropping the uniqueness requirement to allow history rows per category. Adding the index first (replacing the constraint) avoids a table rewrite on the `UserInsight` table and keeps the migration non-blocking. The application layer (`runInsightAnalysis`) guards against duplicate pending rows at the code level rather than relying on DB constraint.
+
+**`migration_lock.toml` signals `migrate deploy` workflow**
+The presence of the lock file confirms Prisma Migrate is used in production deploy mode rather than `db push`. Schema changes are committed as versioned migration files, giving a clear audit trail of what ran in production and when.
 ## ASSET:migrate 2026-06-22 11:51 → Migration candidates snapshot June 2026
 
 | Migration | Effort | Impact | Blocker |
