@@ -16,6 +16,15 @@ Breaking schema changes, missing rollback, data loss risk
 PATHS:
 prisma/
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:migrate 2026-06-23 11:23 → Three destructive migrations with no rollback; UserInsight race on concurrent saves; dump.rdb in repo
+
+1. `prisma/migrations/20260414000000_remove_favourite_table/`: drops a table permanently — data unrecoverable with no down migration.
+2. `prisma/migrations/20260417014518_remove_recipe_match_columns/`: removes columns from Recipe — data permanently deleted; no rollback path.
+3. `prisma/migrations/20260530000000_add_updated_at_drop_flowstep/`: drops FlowStep (if it existed). If applied to an environment that has not been properly backed up, step data is unrecoverable.
+4. `UserInsight` model has `@@index([userId, category])` but no `@@unique([userId, category, status])` constraint. The insights.ts `findFirst + update/create` upsert pattern is not atomic — concurrent recipe saves for the same user within the same second can both pass `findFirst` returning null and both `create`, producing duplicate pending insights per category.
+5. `dump.rdb` committed to the repository root — a Redis RDB snapshot that could contain production keys, rate-limit state, or cooldown tokens. Should be gitignored.
+
+---
 ## ISSUE:backend 2026-06-22 20:06 -> Three migration candidates — CSV metrics to PostgreSQL, OG images to object storage, auth GitHub sync to DB writes
 
 **1. Recipe/discover/auth/digest metrics from local CSV to a PostgreSQL event table**
