@@ -16,6 +16,16 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:backend 2026-06-22 20:06 -> Three confirmed bugs — register skips verification email, Play Store API path wrong, chat bot unauthenticated
+
+**1. `POST /auth/register` never sends a verification email**
+`src/routes/auth.ts:1161-1169`: user is created with `emailVerified: false`, a JWT is returned, and `sendVerificationEmail` is never called. The function is imported but unused in this path. Users can operate the app indefinitely with an unverified email. Only `POST /auth/resend-verification` (a separate, user-initiated call) triggers a verification email. OAuth flows (Google, Apple) also set `emailVerified: false` on creation.
+
+**2. Play Store API resource path uses package name where project number is required**
+`src/services/playstore.ts:4064-4073`: `fetchRateMetric` constructs `name: projects/${packageName}/apps/${packageName}/${metricSet}`. The Play Developer Reporting API v1beta1 expects a numeric project number in the first segment (`projects/<projectNumber>/apps/<packageName>/...`), not the package name (e.g., `com.toifood.app`). All `crashRateMetricSet` and `anrRateMetricSet` queries fail silently (caught → null), so `crashRate7d` and `anrRate7d` are always null in the admin store-metrics response.
+
+**3. `/api/chat` POST is reachable without authentication**
+`src/routes/chat.ts:2647`: no `requireAuth` middleware. `!logs` streams the last 20 PM2 log lines (may contain user IDs and error details). `!status` reveals process names and memory. The endpoint accepts arbitrary HTTP POST requests — there is no Google Chat request signature check (`google-auth-library` or header validation).
 ## ISSUE:bug 2026-06-22 11:51 → groceryMatchCount metric bug; emoji inference lastIndexOf logic inverts specificity
 
 **Bug 1 — groceryMatchCount is wrong** (`src/routes/recipes.ts:1659`): `groceryMatchCount` is assigned `pantryUsed.length` — the count of pantry items used — instead of the count of recipe ingredients not sourced from pantry. The downstream `groceryPct` becomes `pantryUsed / totalIngredients` (pantry utilisation) rather than the intended grocery requirement rate. Both `pantryPct` and `groceryPct` columns in the RECIPE-METRIC.csv and in the generate response `pantryStats` are therefore measuring the same thing.
