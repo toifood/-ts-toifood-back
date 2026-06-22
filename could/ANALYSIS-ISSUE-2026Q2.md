@@ -10,6 +10,11 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->## ISSUE:backend 2026-06-22 11:03 → pluralStem duplicated with divergent logic, storeReport.ts references archived paths, and no runtime request-body validation
+## ISSUE:backend 2026-06-23 11:23 → Dual-route legacy layer, code duplication in ops tools, and unverified-user gap
+
+The codebase maintains a full duplicate route tree under `/` (1-1-0 legacy) alongside `/1-1-1/` (current), with no sunset mechanism, deprecation header, or timeline — both route sets remain live indefinitely. `src/routes/chat.ts` and `src/slack-bot.ts` share three identical helper functions (`getPm2Status`, `getRecentLogs`, `getMetricsSummary`) with no shared module. `POST /auth/register` returns a valid JWT without sending a verification email; `emailVerified` is never enforced as an access gate anywhere in the API, making the field effectively decorative. `storeReport.ts` still references a `-ARCHIVE/-WOULD/` file path that does not exist in the standard deployment layout and will silently fail at runtime.
+
+---
 ## ISSUE:backend 2026-06-22 20:06 -> Four new architectural concerns — unauthenticated chat bot, missing register verification email, DIGEST-METRIC never surfaced, emoji lastIndexOf picks later-occurring general terms
 
 **1. `/api/chat` POST has no authentication**
