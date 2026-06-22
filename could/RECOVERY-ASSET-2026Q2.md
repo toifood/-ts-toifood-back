@@ -16,6 +16,19 @@ Retry logic, circuit breakers, backup mechanisms
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:backend 2026-06-22 20:06 -> Stale-on-error cache pattern, static insight fallbacks, and unhandledRejection logging provide layered degradation
+
+**Stale-on-error for `/stats` (`src/index.ts`)**
+The stats endpoint (recipe count, user count) has a 60-second TTL in-memory cache. If the Prisma query fails and `statsCache` is populated, the cached value is returned rather than a 500. The public landing page remains functional during a brief DB outage — an appropriate trade-off for a marketing metric that can tolerate a 60-second lag.
+
+**`ollamaSuggest` with deterministic fallback (`src/services/ai/insights.ts:3479-3500`)**
+Insight generation calls Ollama with an 8-second timeout and falls back to a template string on any error. Insight records are always written with a usable `suggestion` value. The quality degrades gracefully (AI-generated → static template) rather than failing and leaving a user with no insight row.
+
+**`unhandledRejection` and `uncaughtException` handlers (`src/index.ts`)**
+Both are registered and log with `[process]` prefix. Without these, an unhandled async throw would crash the process silently. PM2 would restart it, but the crash context would be lost. The handlers give a log window before restart for PM2's `pm2 logs` to capture.
+
+**`getAppStoreMetrics` and `getPlayStoreMetrics` return null on any error**
+`src/services/appstore.ts:4028-4032`, `src/services/playstore.ts:4102-4104`: all API failures are caught and return null. The store-metrics route returns partial data (iOS available, Android null) without a full failure — the admin dashboard degrades gracefully.
 ## ASSET:recovery 2026-06-22 11:51 → Recovery posture snapshot June 2026
 
 | Failure scenario | Current behaviour | Recovery path |
