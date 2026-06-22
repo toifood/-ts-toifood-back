@@ -10,6 +10,16 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->## ASSET:backend 2026-06-22 11:03 → Three active metric CSVs with clear schemas; daily digest posts to Google Chat with Ollama-summarised log analysis
+## ASSET:backend 2026-06-22 20:06 -> Per-request CSV metrics with pantry match columns and auth event log give production observability without a telemetry service
+
+**Pantry match analytics in every recipe metric row**
+`RECIPE-METRIC.csv` records `pantryMatchCount`, `pantryPct`, `groceryMatchCount`, `groceryPct`, `continent`, and `promptVersion` on every generation. Average pantry utilisation by provider, style, or prompt version is queryable with a simple CSV grep — no aggregation pipeline or analytics service needed. The `promptVersion` column enables prompt A/B comparison directly from the file.
+
+**Auth event log with method and IP fields, local-IP filtered**
+`AUTH-METRIC.csv` records `event` (register/login), `method` (password/google/apple), `success`, `failReason`, and `ip` per event. The `LOCAL_IPS` guard in `appendAuthMetric` excludes loopback addresses, so the file contains only external production traffic. Repeated failed logins from an IP, Apple auth failure spikes, or registration anomalies are detectable from the CSV without a WAF or SIEM.
+
+**`!metrics` chat command gives on-demand today-counts**
+`src/routes/chat.ts:2633-2641`: `getMetricsSummary` reads today's lines from both metric CSVs and posts recipe and discover counts to Google Chat on `!metrics`. This provides a real-time production health check accessible to anyone in the ops chat without needing server access or a dashboard.
 ## ASSET:usage 2026-06-22 11:51 → Usage instrumentation snapshot June 2026
 
 | Signal | Mechanism | Storage | Coverage |
