@@ -10,6 +10,16 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->## ISSUE:backend 2026-06-22 11:03 → groceryPct in RECIPE-METRIC.csv is incorrect, cook record usage not in any CSV, and DIGEST-METRIC.csv is undocumented
+## ISSUE:backend 2026-06-22 20:06 -> Three usage tracking gaps — DIGEST-METRIC never surfaced, discover count missing from digest post, no retention policy on any CSV
+
+**1. `DIGEST-METRIC.csv` structured rows are written but never read or reported**
+`src/digest.ts:4236-4263` appends per-day rows (recipe counts, avg response ms, Ollama status, memory wired/usable) to `would/DIGEST-METRIC.csv`. This file is never read by any route, chat command, or the digest itself. The `!metrics` chat command reads `RECIPE-METRIC.csv` and `DISCOVER-METRIC.csv` directly. The DIGEST-METRIC structured data is inaccessible without SSHing to the Mac Mini.
+
+**2. Discover feed count computed but not posted in the daily digest**
+`src/digest.ts:4340`: `const discovers = readTodayDiscover()` is computed and passed to `appendDigestLog`, but the `digest` string built at line 4355 never references `discovers`. Operators viewing the Google Chat digest cannot see how many discover queries ran that day without directly reading the CSV.
+
+**3. No retention policy or rotation on any metric CSV file**
+`RECIPE-METRIC.csv`, `DISCOVER-METRIC.csv`, `AUTH-METRIC.csv`, and `DIGEST-METRIC.csv` are append-only with no size limit, rotation, or archiving. At sustained usage, these files grow indefinitely. There is no pre-append size check, no scheduled `logrotate` equivalent, and no alert if the `would/` directory approaches disk capacity.
 ## ISSUE:usage 2026-06-22 11:51 → Metric CSVs are local-only with no replication; discover feed exposes full ingredient lists of other users' recipes
 
 **Local-only metric storage**: `RECIPE-METRIC.csv`, `DISCOVER-METRIC.csv`, `AUTH-METRIC.csv`, and `DIGEST-METRIC.csv` are all written to the `would/` directory on the Mac mini. A hardware failure or OS reinstall loses all historical metrics. Only `AUTH-METRIC.csv` has a GitHub push mechanism (with reliability caveats noted in BUG). The recipe and discover metrics have no off-machine backup.
