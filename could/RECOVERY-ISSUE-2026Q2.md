@@ -16,6 +16,13 @@ Failure scenarios, single points of failure, retry gaps
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:backend 2026-06-22 20:06 -> Two recovery gaps — no Claude circuit breaker (30s wait per failed request), Ollama queue stalls on 65s timeout
+
+**1. No circuit breaker for Claude — every failure burns a 30-second connection slot**
+`src/services/ai/claude.ts:2953`: `signal: AbortSignal.timeout(30_000)`. When Claude is unavailable, each request with `provider=claude` holds an open Express connection for 30 seconds before Ollama fallback. During an outage with N concurrent users, N × 30s connections stack. A circuit breaker that trips after N consecutive Claude failures and routes immediately to Ollama would reduce fallback latency from 30s to near-zero without changing the user-facing fallback behaviour.
+
+**2. A stalled Ollama request at 65 seconds blocks all queued Ollama requests**
+`src/services/ai/ollama.ts:3895`: `signal: AbortSignal.timeout(65_000)`. All Ollama requests are serialised through a single promise queue. A hung Ollama call delays every queued request by up to 65 seconds. Under load (5 queued requests), total user wait behind the stall is up to 325 seconds. There is no mechanism to detect a stalled model instance and drain the queue early — users who queued after the stuck request have no feedback until it times out.
 ## ISSUE:recovery 2026-06-22 11:51 → Redis failure bypasses rate limits and triggers runaway insight Ollama calls; account delete is non-atomic
 
 **Redis failure — cascading effect**: When Redis is unavailable, `recipeGenerateRateLimit()` catches the error and calls `next()` (fail open) — all rate limits are bypassed. Simultaneously, `runInsightAnalysis()` uses a Redis `SET NX` as the weekly cooldown gate; if Redis is down, the gate always passes and every recipe save triggers 5 Ollama API calls for every user, potentially saturating the local Ollama process (which already uses a serial queue). These two failure modes compound each other: no rate limiting + maximum Ollama load simultaneously.
