@@ -16,6 +16,14 @@ Failure scenarios, single points of failure, retry gaps
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:recovery 2026-06-23 11:23 → Ollama is SPOF for free tier; no circuit breakers on any external call; auth metric rows silently lost on GitHub push failure
+
+1. Ollama runs on a local Mac Mini. All free-tier recipe generation routes exclusively through Ollama — there is no cloud fallback. If the Mac Mini goes offline or Ollama crashes, every free user recipe request fails with a 500 until manually restarted. No monitoring or auto-restart is visible in code (PM2 is assumed but not verified from this codebase).
+2. No circuit breaker pattern anywhere: Claude (30s), Ollama (65s), YouTube (5s), AppStore Connect, Play Developer Reporting, Google Chat webhook, Slack webhook, and GitHub API are all called directly. A slow external service holds request threads for the full timeout duration with no backpressure.
+3. `pushRowToGitHub` in `auth.ts`: on network error or non-409 failure after 2 attempts, the auth metric row is permanently dropped with only a `console.warn`. The local CSV is written first, but the cross-repo GitHub sink loses the event.
+4. Google Chat webhook and Slack webhook errors are fully silent (`.catch(() => {})`). Ops teams lose alert visibility when these services are degraded without any secondary notification channel.
+
+---
 ## ISSUE:backend 2026-06-22 20:06 -> Two recovery gaps — no Claude circuit breaker (30s wait per failed request), Ollama queue stalls on 65s timeout
 
 **1. No circuit breaker for Claude — every failure burns a 30-second connection slot**
