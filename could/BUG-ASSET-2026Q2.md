@@ -16,6 +16,16 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:backend 2026-06-22 20:06 -> Idempotent share token, duplicate save guard, and list upsert prevent data integrity issues under repeated client taps
+
+**Idempotent share token generation (`src/routes/recipes.ts:800-809`)**
+`POST /recipes/:id/share` returns the existing `shareToken` if the recipe is already shared, rather than generating a new one. Multiple taps produce the same URL; the `@unique` constraint on `shareToken` is never violated by the application layer.
+
+**Duplicate save guard (`src/routes/recipes.ts:362-368`)**
+`POST /recipes` checks for an existing recipe with the same title saved within the last 24 hours before creating a new record. The guard logs a warning rather than blocking — correct behaviour, since a user may legitimately save two identically-titled recipes. Ops visibility without a hard rejection.
+
+**`SavedListItem.upsert` in list assignment (`src/routes/lists.ts:2339-2343`)**
+Adding a recipe to a list uses `upsert` on the composite PK `[listId, recipeId]`, making the operation safe to retry. Prevents constraint errors from double-taps on the UI without requiring client-side deduplication.
 ## ASSET:bug 2026-06-22 11:51 → Bug inventory snapshot June 2026
 
 | # | File | Line(s) | Description | Severity |
