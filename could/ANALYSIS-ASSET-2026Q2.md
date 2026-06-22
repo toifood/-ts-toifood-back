@@ -10,6 +10,19 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->## ASSET:backend 2026-06-22 11:03 → Clean AIProvider abstraction, atomic Redis rate limiting, and fire-and-forget insight pipeline are well-designed
+## ASSET:backend 2026-06-22 20:06 -> Ollama serial queue and Redis Lua rate-limit are sound concurrency safeguards for a single-server deployment
+
+**Ollama serial queue (`src/services/ai/ollama.ts:3840`)**
+`OllamaProvider` chains all requests through a single promise (`this.queue = this.queue.then(...)`), preventing concurrent calls to the local model. On a Mac Mini with constrained Metal RAM, this avoids GPU memory contention and OOM crashes. The design is intentional and appropriate for a single-server model.
+
+**Redis Lua atomic INCR+EXPIRE (`src/middleware/rateLimit.ts:3792-3797`)**
+The rate limit uses a Lua script to atomically increment and set expiry in one round-trip, closing the race where two simultaneous first-requests both see count=0, increment to 1, but only one sets the TTL. Fail-open on Redis error (`catch → next()`) keeps production traffic flowing if Redis is down.
+
+**Claude → Ollama fallback with metric recording (`src/routes/recipes.ts:236-248`)**
+Claude failures fall back to Ollama silently and `fallback: true` is written to `RECIPE-METRIC.csv`. Users receive a recipe without an error; the metric enables monitoring of how often fallback occurs and whether it correlates with Claude outages.
+
+**Shared prompt builders prevent provider prompt drift (`src/services/ai/provider.ts:3429-3451`)**
+`pickRegion`, `buildStyleInstruction`, `buildPantryLine`, and `buildMealTypeLine` are shared by both `ClaudeProvider` and `OllamaProvider`. Changes to continent/style/pantry prompt logic propagate to both providers automatically. Provider-specific divergence (dietary filters for Claude, CJK stripping for Ollama) is explicit and isolated.
 ## ASSET:analysis 2026-06-22 11:51 → Architecture snapshot: Express + Prisma + Ollama on Mac mini M4
 
 | Layer | Detail |
