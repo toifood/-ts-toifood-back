@@ -10,6 +10,17 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->## ASSET:backend 2026-06-22 11:03 → Clean AIProvider abstraction, atomic Redis rate limiting, and fire-and-forget insight pipeline are well-designed
+## ASSET:backend 2026-06-23 11:23 → Architecture snapshot: Express/TS/Prisma/Redis, dual AI providers, OG image pipeline
+
+- Runtime: Node.js/TypeScript, Express 4, Prisma 5 (PostgreSQL), Redis (ioredis)
+- AI: ClaudeProvider (claude-haiku-4-5-20251001) and OllamaProvider (qwen2.5:7b) with automatic Claude→Ollama fallback; OpenAIProvider present but not wired to any active route
+- Auth: JWT (7-day), bcrypt, Passport local + Google OAuth 2.0, Apple Sign-In (JWKS verify via native crypto)
+- Rate limiting: Redis Lua atomic INCR per user per provider per hour; free (3 ollama / 2 claude), premium (10 / 5), admin bypass
+- Features: recipe generate + save, pantry, saved lists, discover feed (raw SQL with pantry scoring), OG image (napi-rs/canvas), YouTube linking, insights engine (5 categories, Ollama-powered), flows/onboarding, cook records, recipe reviews, store metrics (App Store + Play Store)
+- Ops: daily digest (digest.ts), Slack bot (socket mode), Google Chat bot + webhook alerts, auth metrics CSV → GitHub cross-repo push
+- Routes: dual-prefix `/` (legacy 1-1-0) and `/1-1-1/` (current) for all resource paths
+
+---
 ## ASSET:backend 2026-06-22 20:06 -> Ollama serial queue and Redis Lua rate-limit are sound concurrency safeguards for a single-server deployment
 
 **Ollama serial queue (`src/services/ai/ollama.ts:3840`)**
