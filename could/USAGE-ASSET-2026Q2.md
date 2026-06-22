@@ -10,6 +10,17 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->## ASSET:backend 2026-06-22 11:03 → Three active metric CSVs with clear schemas; daily digest posts to Google Chat with Ollama-summarised log analysis
+## ASSET:backend 2026-06-23 11:23 → CSV (RECIPE/DISCOVER/AUTH/DIGEST), DB (UserInsight/CookRecord/RecipeReview), daily digest
+
+- CSV files (local filesystem): RECIPE-METRIC.csv (19 cols: timestamp, userId, requestedProvider, usedProvider, fallback, responseMs, style, filters, pantrySelectedCount, ingredientCount, steps, pantryMatchCount, pantryPct, groceryMatchCount, totalIngredients, groceryPct, promptVersion, continent, title), DISCOVER-METRIC.csv (6 cols: timestamp, userId, pantrySize, resultCount, avgPantryPct, avgGroceryPct), AUTH-METRIC.csv (7 cols: timestamp, event, method, userId, success, failReason, ip — also pushed cross-repo to GitHub), DIGEST-METRIC.csv (9 cols: timestamp, recipeCount, discoverCount, ollamaRecipes, claudeRecipes, avgResponseMs, wiredMb, usableMb, ollamaStatus)
+- DB-backed signals: UserInsight (5 categories × pending/accepted/dismissed), CookRecord (STARTED/COMPLETED/ABANDONED + ingredientCount/pantryCount/groceryCount + ingredient lists), RecipeReview (stars 1–5 on shared recipes only)
+- Ops queries: Slack `!metrics` and Google Chat `!metrics` (today's recipe + discover count)
+- Daily digest: `src/digest.ts` — Ollama-summarised PM2 error log + infra health snapshot, posted to Google Chat
+- Public stats: `GET /stats` — recipe count + user count, rounded to nearest 10, 60s in-memory cache
+- Admin: `GET /1-1-1/api/store-metrics` — iOS (installs/sessions/activeDevices/crashes P30D) + Android (crashRate7d/anrRate7d), 1hr cache
+- Weekly store report: `src/storeReport.ts` writes ISSUE + ASSET entries to `-ARCHIVE/-WOULD/` log files
+
+---
 ## ASSET:backend 2026-06-22 20:06 -> Per-request CSV metrics with pantry match columns and auth event log give production observability without a telemetry service
 
 **Pantry match analytics in every recipe metric row**
