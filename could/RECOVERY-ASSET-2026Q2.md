@@ -16,6 +16,21 @@ Retry logic, circuit breakers, backup mechanisms
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:recovery 2026-06-23 11:23 → AbortSignal timeouts per provider; Redis retry strategy; health endpoints; no circuit breakers present
+
+- Redis: `retryStrategy: (times) => Math.min(times * 200, 2000)` — reconnects with backoff up to 2s interval; `enableOfflineQueue: false` (fail fast, don't buffer)
+- Claude: `AbortSignal.timeout(30_000)` — auto-aborts at 30s; on any error triggers Ollama fallback and sets `fallback=true` in metrics
+- Ollama: `AbortSignal.timeout(65_000)` — auto-aborts at 65s; on failure propagates 500 to client (no fallback)
+- Ollama insights suggestions: manual `AbortController` with 8s `setTimeout`; returns fallback string on timeout
+- YouTube: manual `AbortController` with 5s `setTimeout`; returns `null` on any failure
+- AppStore / PlayStore: per-metric try/catch; returns `null` on failure (partial results possible)
+- GitHub auth push: 2 attempts on HTTP 409 conflict; `console.warn` + return on other failures
+- Health endpoints: `GET /health` and `GET /1-1-1/system/health` — return `{status:"ok",timestamp}` only; no dependency checks
+- `process.on('unhandledRejection')` and `process.on('uncaughtException')` log to console only — no restart triggered
+- Stats endpoint: 60s in-memory cache; serves stale data if DB query fails and cache is warm
+- No circuit breakers, no dead-letter queues, no PagerDuty/alerting hooks on persistent failure patterns
+
+---
 ## ASSET:backend 2026-06-22 20:06 -> Stale-on-error cache pattern, static insight fallbacks, and unhandledRejection logging provide layered degradation
 
 **Stale-on-error for `/stats` (`src/index.ts`)**
