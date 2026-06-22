@@ -16,6 +16,22 @@ Undocumented APIs, missing env vars, unclear onboarding steps
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:instruction 2026-06-23 11:23 → No README; 13+ env vars missing from .env.example; deployment steps undocumented
+
+`.env.example` is present but missing at least 13 env vars referenced in source:
+- `REDIS_URL` (rateLimit.ts, insights.ts — defaults to localhost:6379)
+- `YOUTUBE_API_KEY` (youtube.ts)
+- `SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN` (slack-bot.ts)
+- `SLACK_WEBHOOK_URL` (slack.ts)
+- `APPSTORE_KEY_ID`, `APPSTORE_ISSUER_ID`, `APPSTORE_PRIVATE_KEY`, `APPSTORE_APP_ID` (appstore.ts)
+- `PLAY_SERVICE_ACCOUNT_JSON`, `PLAY_PACKAGE_NAME` (playstore.ts)
+- `APP_WEB_URL` (recipes.ts share URL construction)
+- `MIN_APP_VERSION` (index.ts /app-config endpoint)
+- `CORS_ORIGIN` (index.ts — defaults to hardcoded toifood.co.nz origins)
+
+No README.md exists in the repository. No API reference or route map. The 1-1-1 versioning scheme and the plan for retiring legacy (1-1-0) routes are entirely undocumented. `scripts/macmini-setup.sh` exists but is not referenced from any doc. PM2 process management, Cloudflare Tunnel setup, and Redis installation are assumed but not described anywhere.
+
+---
 ## ISSUE:backend 2026-06-22 20:06 -> Two instruction gaps — Ollama silently drops dietary filters with no client signal, Google OAuth strategy conditionally absent at runtime
 
 **1. Ollama silently drops dietary filters — no signal to the client**
