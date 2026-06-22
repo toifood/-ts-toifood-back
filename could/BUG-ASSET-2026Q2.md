@@ -16,6 +16,20 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:bug 2026-06-23 11:23 → Error handling coverage: Redis fail-open, fire-and-forget alert paths, validation boundaries
+
+- Rate limiter: Redis errors caught and logged; request proceeds (fail-open) — intentional but undocumented behaviour
+- Insights trigger: `runInsightAnalysis(...).catch(console.warn)` — fire-and-forget; exceptions silently swallowed after save
+- GitHub auth metric push (`pushRowToGitHub`): no persistent queue; on failure after 2 attempts, row is permanently dropped with `console.warn`
+- Google Chat / Slack alerts: `.catch(() => {})` — silent failure on webhook errors
+- Claude: 30s `AbortSignal.timeout`; on failure falls back to Ollama and sets `fallback=true` in metrics CSV
+- Ollama: 65s `AbortSignal.timeout`; on failure propagates error to caller (recipe generation returns 500)
+- YouTube: 5s manual `AbortController`; on failure returns `null` — recipe saved without video link
+- Input validation: ingredients capped at 50 items, each trimmed to 50 chars; password 8–128 chars; name ≤50 chars; email ≤100 chars; descriptionNote ≤500 chars
+- `register` does not send a verification email — `emailVerified` stays false indefinitely until user manually requests resend
+- `dump.rdb` in repo root: Redis snapshot, potential production data exposure
+
+---
 ## ASSET:backend 2026-06-22 20:06 -> Idempotent share token, duplicate save guard, and list upsert prevent data integrity issues under repeated client taps
 
 **Idempotent share token generation (`src/routes/recipes.ts:800-809`)**
