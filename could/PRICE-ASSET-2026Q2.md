@@ -10,6 +10,18 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->## ASSET:backend 2026-06-22 11:03 → Rate limit structure, role hierarchy, and store metric fetchers are clean and stable
+## ASSET:backend 2026-06-23 11:23 → Claude haiku (1024 tokens, temp 1.0, 30s); Ollama local (no API cost); per-user hourly Redis rate limits
+
+- Claude: model=claude-haiku-4-5-20251001, max_tokens=1024, temperature=1.0, 30s AbortSignal timeout
+- Ollama: model=qwen2.5:7b (env-configurable), num_predict=2000, temperature=0.9, num_ctx=8192, 65s timeout — runs locally, no API cost
+- OpenAI: model=gpt-4o in OpenAIProvider but not wired to any live route (requires AI_PROVIDER=openai env var explicitly)
+- YouTube: 1 search query per `findRecipeVideo` call; called at generate time + potentially at save; 5s timeout; free tier = 10,000 units/day
+- Per-user hourly rate limits (Redis): free = 3 ollama / 2 claude; premium = 10 ollama / 5 claude; admin = unlimited
+- Insights: Ollama only (no Claude cost); num_predict=60, 8s timeout
+- Store metrics: AppStore Connect JWT (ES256) + Play Developer Reporting API — no per-call billing
+- No Anthropic token usage captured; no daily spend tracker; no aggregate quota dashboard
+
+---
 ## ASSET:backend 2026-06-22 20:06 -> Per-provider per-user Redis rate limits cleanly enforce the free/premium tier split with observable usage state
 
 **Independent per-provider rate limit keys (`src/middleware/rateLimit.ts:2779`)**
