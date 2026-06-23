@@ -15,6 +15,21 @@ Missing test coverage, untested edge cases, flaky tests, gaps in integration and
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:test 2026-06-24 09:27 → analyzePantry pantry-match correctness, duplicate STARTED guard, terminal-state enforcement, Ollama dietary filter drop, and insights Redis resilience are entirely untested
+
+Zero test files remain (unchanged: no `*.spec.ts`/`*.test.ts`, no test script, no CI). New untested paths identified this pass that are not covered by prior entries:
+
+1. **`analyzePantry` ingredient-string vs. pantry-name mismatch** (`src/services/ai/insights.ts`) — A test seeding a user with `flour` in their pantry and a saved recipe containing `"2 cups flour"` in its ingredients, then calling `runInsightAnalysis`, should assert the pantry insight does NOT suggest `"2 cups flour"` as a missing item. The test would immediately expose the `Set.has` exact-match bug.
+
+2. **Duplicate STARTED `CookRecord` creation** (`src/routes/cookRecords.ts`) — A test calling `POST /records/start` twice in rapid succession for the same `userId + recipeId` should assert that only one STARTED record exists after both requests. Currently no guard exists and both writes succeed — an integration test hitting Prisma directly would expose this.
+
+3. **Terminal-state enforcement on `PATCH /records/:id/complete` and `/abandon`** (`src/routes/cookRecords.ts`) — A test that (a) starts a record, (b) abandons it, (c) then calls `/complete` on the same record should assert a 400 or 409 error. Currently the complete succeeds silently, overwriting the ABANDONED state.
+
+4. **`OllamaProvider` dietary filter drop** (`src/services/ai/ollama.ts`) — A test constructing a `GenerateRecipeRequest` with `dietaryFilters: [DietaryFilter.Vegan]`, calling `OllamaProvider.generateRecipe`, and asserting the prompt passed to `fetch` contains a dietary constraint would immediately reveal that `dietaryLine` is hardcoded to `""`. The test can mock `fetch` to capture the request body.
+
+5. **`runInsightAnalysis` Redis cooldown no-op path** (`src/services/ai/insights.ts`) — A test calling `runInsightAnalysis` twice for the same `userId` within 7 days should assert no DB writes occur on the second call (Redis NX returns `null`). Without a test, a Redis misconfiguration or key eviction could silently allow weekly-cooldown bypass.
+
+6. **`insights.ts` Redis error resilience** (`src/services/ai/insights.ts`) — A test simulating Redis unavailability during `runInsightAnalysis` should assert the process does not crash and that recipe generation continues normally. Currently the Redis client has no `.on('error')` listener and an unhandled error event would surface to the process-level `uncaughtException` handler.
 ## ISSUE:test 2026-06-24 09:03 → CookRecord flow, flow dietary cap bypass, and email re-verification are entirely untested; stemMatch substring false positives have no regression coverage
 
 Zero test files remain (confirmed: no `*.spec.ts` / `*.test.ts` in tree; no test script in `package.json`). New untested paths not covered by prior entries:
