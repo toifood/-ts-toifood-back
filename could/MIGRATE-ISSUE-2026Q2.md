@@ -16,6 +16,20 @@ Breaking schema changes, missing rollback, data loss risk
 PATHS:
 prisma/
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:backend 2026-06-23 14:32 -> Migration 20260614 drops UserInsight unique constraint — restore SQL must not recreate it; RecipeReview/SavedList still untracked
+
+**`20260614000000_insights_drop_unique_add_history` — most recent tracked migration**
+This migration intentionally removes the `@@unique([userId, category])` constraint from `UserInsight` and replaces it with `@@index([userId, category])`, enabling accumulation of insight history (multiple rows per user+category). Any restore procedure or recovery SQL that recreates `CREATE UNIQUE INDEX "UserInsight_userId_category_key"` will either fail (if history rows exist) or silently re-impose uniqueness that breaks the insight history pattern.
+
+**Still untracked via Prisma migration files (raw SQL required):**
+- `RecipeReview` — no migration file; table must be created via raw SQL on restore
+- `SavedList` — no migration file
+- `SavedListItem` — no migration file
+
+**Tracked via Prisma migrations (deploy covers these):**
+- `CookRecord`, `CookStatus` enum — covered by `20260531000000_add_cook_record`
+- `UserInsight` with non-unique index — covered by `20260614000000`
+- `User.ageRange`, `User.gender` — covered by `20260531000001_add_user_age_gender`
 ## ISSUE:migrate 2026-06-23 11:23 → Three destructive migrations with no rollback; UserInsight race on concurrent saves; dump.rdb in repo
 
 1. `prisma/migrations/20260414000000_remove_favourite_table/`: drops a table permanently — data unrecoverable with no down migration.
