@@ -16,6 +16,24 @@ Failure scenarios, single points of failure, retry gaps
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:back 2026-06-23 15:14 → Failure modes, recovery paths, and open gaps in resilience
+
+**Handled failures (fail-open or graceful degradation)**
+- **Redis unavailable**: Rate limit middleware logs a warning and calls `next()` — users can generate unlimited recipes. `getRecipeUsage` returns `{used:0, max:LIMITS.free}` — premium users appear to have free limits in the usage display. Non-blocking.
+- **Claude API failure**: Falls back to Ollama. `fallback=true` recorded in RECIPE-METRIC CSV. Response time will increase significantly (Ollama is slower).
+- **YouTube API failure/quota**: `findRecipeVideo` returns `null`, recipe is saved without videoId. Silent to user.
+- **OG image generation failure**: `catch(() => null)` at point of use — recipe generates and saves without an image. Placeholder served on public recipe page.
+- **Ollama summarization timeout (digest)**: 15-second AbortController timeout, returns `"Summary unavailable (Ollama timeout)"` — digest still posts.
+- **Google Chat webhook failure**: `catch(() => {})` — fire and forget, never blocks a request.
+- **PM2**: Process manager restarts on crash. Restart count tracked in PM2 metrics visible via `!status` Slack/Chat command.
+
+**Open gaps**
+- **No DB reconnection retry**: If the Prisma client loses its PostgreSQL connection (network blip), all requests will fail with DB errors until PM2 restarts the process. Prisma 5 does have some built-in retry for transient errors, but there is no explicit reconnect strategy.
+- **Email send failure is not retried**: `sendVerificationEmail` and `sendPasswordResetEmail` throw if Gmail rejects the send. The error is caught in the route and returns a 500. No retry queue exists.
+- **Auth metric GitHub push failure**: Logs a warning only. If the cross-repo token expires or GitHub is down, auth events are written locally but not synced. No backfill mechanism.
+- **`uncaughtException` handler**: Logs the error but does not explicitly exit — Node.js behaviour is to crash on uncaught exceptions by default; adding a `process.exit(1)` would ensure PM2 restarts cleanly rather than leaving the process in an unknown state.
+
+---
 ## ISSUE:backend 2026-06-23 14:32 -> Recovery SQL must not recreate UserInsight unique index; would/ directory must be pre-created; infra health path is hardcoded to specific OS user
 
 **1. Unique index re-creation will break insight history**
