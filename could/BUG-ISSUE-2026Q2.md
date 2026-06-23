@@ -16,6 +16,24 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:bug 2026-06-24 09:03 → Email change doesn't reset emailVerified; flow step bypasses 3-filter cap; save endpoint accepts unbounded arrays
+
+**Bug 1 — `PATCH /users/me` email change leaves emailVerified: true on new address** (`src/routes/users.ts:1695-1712`)
+When a user changes their email via `PATCH /users/me`, the update writes the new email but does not reset `emailVerified: false` and does not call `sendVerificationEmail`. A user can change their account email to an address they do not control and it remains marked as verified indefinitely. The uniqueness check (`prisma.user.findUnique({ where: { email } })`) confirms the new address is not already taken but does not trigger the email-verification flow. Severity: medium — `emailVerified` is not enforced on any current route, but this leaves a verified-state lie in the DB that any future enforcement would inherit.
+
+**Bug 2 — `POST /flows/:id/response` dietary preference step bypasses the 3-filter cap** (`src/routes/flows.ts:55-64`)
+`PATCH /users/me/preferences` enforces `validFilters.length > 3` → 400. The flow response handler does not:
+```ts
+if (validFilters.length > 0) {
+  await prisma.dietaryPreference.createMany({
+    data: validFilters.map((filter) => ({ userId: req.userId!, filter })),
+  });
+}
+```
+A flow step that presents >3 dietary options and records all selected responses can write 4+ `DietaryPreference` rows for a user, bypassing the cap enforced everywhere else. The cap is currently soft (not DB-enforced), so this silently corrupts the user's filter set.
+
+**Bug 3 — `POST /recipes` (save) accepts unbounded `ingredients`, `steps`, and `userPreferences` arrays** (`src/routes/recipes.ts:915-953`)
+The generate endpoint caps at 50 ingredients (`ingredients.length > 50` → 400) and trims each to 50 chars. The save endpoint has no equivalent check — a client calling `POST /recipes` directly can write `ingredients: ["x".repeat(5000), ...]` with an array of any length. `express.json({ limit: "2mb" })` provides a body-size backstop, but within that budget a malicious client can still store thousands of ingredients/steps/preferences rows per recipe, bloating `Recipe.ingredients String[]`, `Recipe.steps String[]`, and `Recipe.userPreferences String[]` columns without any server-side rejection.
 ## ISSUE:bug 2026-06-23 21:39 → OllamaProvider queue poisons itself on first error, blocking all subsequent requests
 
 `src/services/ai/ollama.ts:181` — `this.queue` is set to `this.queue.then(() => this._generate(request))`. If `_generate` rejects, `this.queue` becomes a permanently rejected promise. Every subsequent `generateRecipe` call chains on it and inherits the rejection immediately, meaning a single Ollama timeout or JSON parse error takes down all future Ollama generations until PM2 restarts the process.
