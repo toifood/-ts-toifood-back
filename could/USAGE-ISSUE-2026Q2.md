@@ -10,6 +10,42 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->## ISSUE:backend 2026-06-22 11:03 → groceryPct in RECIPE-METRIC.csv is incorrect, cook record usage not in any CSV, and DIGEST-METRIC.csv is undocumented
+## ISSUE:back 2026-06-23 15:14 → Feature usage patterns and API surface overview for ts-toifood-back
+
+**Core recipe flow**
+1. `POST /1-1-1/api/recipes/generate` — rate-limited by provider and role. Returns recipe JSON + OG image base64 + YouTube videoId. Metrics appended to `would/RECIPE-METRIC.csv`.
+2. `POST /1-1-1/api/recipes` — saves the generated recipe to DB. Accepts `ogImageBase64` and `videoId` from the generate response to avoid re-fetching. Triggers insight analysis fire-and-forget.
+3. `GET /1-1-1/api/recipes` — returns up to 500 recipes for the authenticated user, newest first, with `listIds` embedded per recipe.
+
+**Discover feed**
+- `GET /1-1-1/api/recipes/discover` — returns top 20 shared recipes ranked by pantry ingredient overlap (`matchCount DESC`). Filtered to `groceryPct >= 20%`. Metrics appended to `would/DISCOVER-METRIC.csv`.
+
+**Cook records**
+- `POST /1-1-1/api/records/start` — creates a CookRecord with pantry vs. grocery split computed at start time using the robust `pluralStem` matcher.
+- `PATCH /1-1-1/api/records/:id/complete` or `/abandon` — updates status.
+
+**Insights**
+- `GET /1-1-1/api/insights` — returns latest pending insight per category (dietary, cuisine, style, pantry, mealType).
+- `PATCH /1-1-1/api/insights/:id` — accepts/dismisses. Accepted dietary insights are auto-applied to preferences if under the 3-filter cap.
+- Analysis is triggered after every recipe save with a 7-day Redis cooldown per user; minimum 5 saved recipes required.
+
+**Saved lists**
+- `GET/POST/PATCH/DELETE /1-1-1/api/lists` — max 5 lists per user (app-enforced).
+- `POST/DELETE /1-1-1/api/lists/:id/recipes/:recipeId` — add/remove recipe from list.
+
+**Admin / system**
+- `GET/POST/PATCH /1-1-1/system/admin/flows` — flow management (admin-only).
+- `GET /1-1-1/system/store-metrics` — iOS + Android KPIs, 1hr in-memory cache, admin-only.
+- `GET /1-1-1/system/health` — health check, unauthenticated.
+- `GET /1-1-1/system/stats` — public recipe + user count, 60s in-memory cache, rounded to nearest 10.
+- `GET /1-1-1/system/app-config` — returns `minVersion` from env.
+
+**Sharing**
+- `POST /recipes/:id/share` — generates a 10-char nanoid token. Idempotent.
+- `GET /recipes/public/:token` — unauthenticated public recipe view.
+- `GET /recipes/public/:token/og-image` — serves pre-generated PNG with 24hr Cache-Control.
+
+---
 ## ISSUE:backend 2026-06-23 14:32 -> Cook session completion rate untracked in digest, digest.ts mkdir gap, infra health path hardcoded, rate-limit hits still generate no structured metric
 
 **1. Cook session completion rate absent from digest**
