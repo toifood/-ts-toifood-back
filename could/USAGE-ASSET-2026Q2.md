@@ -10,6 +10,26 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->## ASSET:backend 2026-06-22 11:03 → Three active metric CSVs with clear schemas; daily digest posts to Google Chat with Ollama-summarised log analysis
+## ASSET:backend 2026-06-23 14:32 -> Usage inventory update — all CSVs in would/, DIGEST-METRIC schema, CookRecord DB signal, infra health source
+
+**Metric files (all in `would/` directory):**
+
+| File | Written by | One row per | Key fields |
+|---|---|---|---|
+| `RECIPE-METRIC.csv` | `routes/recipes.ts` `appendMetric()` | Successful generate | userId, requestedProvider, usedProvider, fallback, responseMs, style, filters, pantrySelectedCount, ingredientCount, steps, pantryMatchCount, pantryPct, groceryMatchCount, totalIngredients, groceryPct, promptVersion, continent, title |
+| `DISCOVER-METRIC.csv` | `routes/recipes.ts` `appendDiscoverMetric()` | Discover query | timestamp, userId, pantrySize, resultCount, avgPantryPct, avgGroceryPct |
+| `DIGEST-METRIC.csv` | `src/digest.ts` | Daily digest run | timestamp, recipeCount, discoverCount, ollamaRecipes, claudeRecipes, avgResponseMs, wiredMb, usableMb, ollamaStatus |
+
+**New DB-based usage signal: `CookRecord`**
+Tracks cooking sessions per user and recipe. Queryable directly:
+```sql
+SELECT status, COUNT(*) FROM "CookRecord" GROUP BY status;
+SELECT AVG(EXTRACT(EPOCH FROM ("completedAt" - "startedAt"))/60) AS avg_cook_min
+FROM "CookRecord" WHERE status = 'COMPLETED';
+```
+Not yet included in `digest.ts` or any aggregation endpoint.
+
+**Infra health source:** `/Users/jayagent/.openclaw/logs/infra_health.log` — updated every ~3 hours by Mac Mini monitoring script. Digest reads last 8 lines. Keys per line: `metal` (GPU/Metal MB), `cpu_buf` (CPU buffer MB), `kv` (KV cache MB), `ollama` (status: running/FAILED/booting).
 ## ASSET:backend 2026-06-23 11:23 → CSV (RECIPE/DISCOVER/AUTH/DIGEST), DB (UserInsight/CookRecord/RecipeReview), daily digest
 
 - CSV files (local filesystem): RECIPE-METRIC.csv (19 cols: timestamp, userId, requestedProvider, usedProvider, fallback, responseMs, style, filters, pantrySelectedCount, ingredientCount, steps, pantryMatchCount, pantryPct, groceryMatchCount, totalIngredients, groceryPct, promptVersion, continent, title), DISCOVER-METRIC.csv (6 cols: timestamp, userId, pantrySize, resultCount, avgPantryPct, avgGroceryPct), AUTH-METRIC.csv (7 cols: timestamp, event, method, userId, success, failReason, ip — also pushed cross-repo to GitHub), DIGEST-METRIC.csv (9 cols: timestamp, recipeCount, discoverCount, ollamaRecipes, claudeRecipes, avgResponseMs, wiredMb, usableMb, ollamaStatus)
