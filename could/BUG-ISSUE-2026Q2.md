@@ -16,6 +16,23 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:backend 2026-06-23 14:32 -> Three new bugs — STARTED records never auto-expire, insights accept race, digest.ts missing mkdir crashes silently
+
+**Bug 1 — STARTED CookRecords never auto-timeout** (`src/routes/cookRecords.ts`)
+No scheduled job, TTL, or sweep transitions `CookRecord` rows stuck in `STARTED`. If the user's app crashes or closes without calling `/complete` or `/abandon`, the record stays `STARTED` indefinitely. `GET /records` returns all records with no status filter, so stale `STARTED` rows appear in the user's history. The `ABANDONED` status exists but has no automatic path.
+
+**Bug 2 — Insights accept race condition** (`src/routes/insights.ts` PATCH `/:id`)
+The auto-apply block for accepted dietary insights:
+```ts
+const existing = await prisma.dietaryPreference.findMany({ where: { userId } });
+if (existing.length < 3) {
+  await prisma.dietaryPreference.create({ ... });
+}
+```
+Two concurrent requests (different insight IDs, both dietary) that both read `existing.length < 3` will both call `create`, producing 4+ preference rows and bypassing the 3-filter cap enforced in `PATCH /users/me/preferences`.
+
+**Bug 3 — `digest.ts` crashes silently if `would/` directory is absent**
+`src/digest.ts` calls `fs.appendFileSync(filePath, row)` on `would/DIGEST-METRIC.csv` without checking whether the directory exists. `src/routes/recipes.ts` guards with `fs.mkdirSync(dir, { recursive: true })` before writing — `digest.ts` does not. On a fresh deploy or restore where `would/` was not created, the digest process throws, the catch block in the IIFE swallows it, and no Google Chat alert is posted for that day.
 ## ISSUE:bug 2026-06-23 11:23 → Dietary filters silently dropped on Claude→Ollama fallback; hardcoded infra path; two divergent pluralStem implementations
 
 1. `src/routes/recipes.ts` POST /recipes/generate: when Claude fails and Ollama handles the request, `dietaryTags` is set to `[]` in the response (`usedProvider === "claude" ? validFilters : []`). The user's dietary restrictions are silently not applied — no warning is returned to the client, meaning a user with e.g. "Vegan" may receive a non-vegan recipe without any indication.
