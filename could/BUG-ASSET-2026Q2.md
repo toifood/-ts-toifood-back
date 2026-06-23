@@ -16,6 +16,20 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:bug 2026-06-24 09:03 → CookRecord and insights endpoints have tight ownership and state guards; three new input-boundary gaps identified
+
+**Robust paths confirmed:**
+- `POST /records/start`: ownership verified via `prisma.recipe.findFirst({ id: recipeId, userId: req.userId! })` before any write — cross-user injection impossible. All ingredient categorization (`pantryItems`, `groceryItems`) is computed server-side from the user's live pantry; no client-supplied pantry/grocery arrays are trusted.
+- `PATCH /records/:id/complete` and `PATCH /records/:id/abandon`: both fetch the record with `{ id, userId: req.userId! }` before update — no IDOR path on status transitions.
+- `PATCH /insights/:id`: three-layer guard — status must be strictly `"accepted"` or `"dismissed"` (400 otherwise), ownership check (`insight.userId !== req.userId!` → 404), state guard (`insight.status !== "pending"` → 400 INSIGHT_RESOLVED). Prevents re-resolving and cross-user insight mutation.
+- `SavedListItem` upsert (`src/routes/lists.ts`) on composite PK `[listId, recipeId]` — safe to retry under network double-tap; no constraint error surfaces to the client.
+- Rate limiter fail-open on Redis error (`src/middleware/rateLimit.ts:134-136`): logs warn and allows request through — correct sentinel behaviour, documented intent.
+
+**New boundary gaps:**
+- `POST /recipes` save handler (`src/routes/recipes.ts:915`): no length bounds on `ingredients`, `steps`, or `userPreferences` arrays — the 50-item / 50-char caps applied at generate time are not re-checked at save time, leaving a direct-API attack surface.
+- `PATCH /users/me` email change (`src/routes/users.ts:1695`): no `emailVerified: false` reset and no re-verification email — silent verified-state lie introduced on every email update.
+- `POST /flows/:id/response` dietary step (`src/routes/flows.ts:55`): 3-filter cap from `PATCH /users/me/preferences` not replicated — flow-applied preferences can exceed the limit with no log or rejection.
+- `POST /records/start` `servings` param: validated as `> 0` but no upper bound — a client can store `servings: 999999` in a CookRecord with no rejection.
 ## ASSET:bug 2026-06-23 21:39 → Strong error-handling baseline; four failure modes lack alerts or correction
 
 **Well-covered paths:**
