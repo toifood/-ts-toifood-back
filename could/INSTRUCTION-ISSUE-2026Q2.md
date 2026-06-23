@@ -16,6 +16,47 @@ Undocumented APIs, missing env vars, unclear onboarding steps
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:back 2026-06-23 15:14 → Dev, deployment, and ops instructions for ts-toifood-back
+
+**Local development**
+```
+npm run dev   # nodemon --exec ts-node -r tsconfig-paths/register src/index.ts
+npm run build # tsc
+npm start     # node dist/src/index.js
+```
+
+**Required environment variables**
+- `DATABASE_URL` — PostgreSQL connection string
+- `JWT_SECRET` — JWT signing secret
+- `REDIS_URL` — defaults to `redis://localhost:6379`
+- `ANTHROPIC_API_KEY` — enables Claude recipe generation (optional; falls back to Ollama)
+- `GMAIL_USER` + `GMAIL_APP_PASSWORD` — email verification and password reset
+- `YOUTUBE_API_KEY` — recipe video lookup (optional; skipped if unset)
+- `CORS_ORIGIN` — comma-separated allowed origins (defaults to `https://toifood.co.nz,https://app.toifood.co.nz`)
+- `APP_URL` — base URL for email links (defaults to `https://api.toifood.co.nz`)
+- `APP_WEB_URL` — base URL for share links (defaults to `https://toifood.co.nz`)
+- `MIN_APP_VERSION` — minimum client version returned by `/app-config` (default `1.0.6`)
+- `OLLAMA_BASE_URL` — defaults to `http://127.0.0.1:11434`
+- `OLLAMA_MODEL` — defaults to `qwen2.5:7b`
+- `GOOGLE_CHAT_WEBHOOK_URL` — chat alerts and daily digest
+- `SLACK_BOT_TOKEN` + `SLACK_APP_TOKEN` — Slack bot (socket mode, optional)
+- `TOIFOOD_CROSS_REPO_TOKEN` — GitHub PAT for pushing auth metrics to ts-toifood-dev
+- `APPSTORE_KEY_ID` / `APPSTORE_ISSUER_ID` / `APPSTORE_PRIVATE_KEY` / `APPSTORE_APP_ID` — App Store metrics
+- `PLAY_SERVICE_ACCOUNT_JSON` / `PLAY_PACKAGE_NAME` — Play Store metrics
+
+**Deployment**
+- PM2 process name: `toifood-back`
+- Cloudflare Tunnel handles HTTPS; `app.set('trust proxy', 1)` set for correct IP detection
+- Legacy routes (`/auth`, `/recipes`, etc.) remain mounted alongside `/1-1-1/api/*` — do not remove until all app builds target 1-1-1
+- Daily digest: run `npx ts-node src/digest.ts` via cron
+- Store report: run `npx ts-node src/storeReport.ts` via cron (writes to `-ARCHIVE/-WOULD/`)
+
+**Rate limits (recipe generation)**
+- Free: 3 Ollama + 2 Claude per hour
+- Premium: 10 Ollama + 5 Claude per hour
+- Admin: unlimited
+
+---
 ## ISSUE:backend 2026-06-23 14:32 -> Metric files moved to would/ — all existing docs reference logs/ which is now wrong; four new undocumented endpoints and one new CSV
 
 **Critical: metric directory changed from `logs/` to `would/`**
