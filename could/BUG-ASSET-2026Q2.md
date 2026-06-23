@@ -16,6 +16,20 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:bug 2026-06-24 10:24 → P2002 catch on pantry duplicate is robust; list and flow ownership re-checks are tight; email service propagates rejections correctly; four new silent failure modes confirmed
+
+**Robust paths confirmed in newly read code:**
+- `POST /pantry` P2002 catch block (`src/routes/pantry.ts`): a duplicate insert that races past the TOCTOU window is caught by `err.code === "P2002"`, which re-fetches the conflicting row and returns a consistent 409 with the existing item. No write error leaks to the client as a 500.
+- `DELETE /pantry/:id` ownership re-check: `findFirst({ id, userId })` before `deleteMany` prevents cross-user deletion and returns 404 cleanly — no IDOR surface on delete.
+- `POST /lists/:id/recipes/:recipeId` double ownership: both list (`userId: req.userId!`) and recipe (`userId: req.userId!`) are verified before the `SavedListItem.upsert` — a user cannot add another user's recipe to their list.
+- `POST /flows/:id/response` upsert idempotency: `UserFlowView.upsert` on `{ userId_flowId }` unique constraint is safe on network retry — no duplicate view rows accumulate.
+- `sendVerificationEmail` and `sendPasswordResetEmail` (`src/services/email.ts`): both are fully `async` and propagate rejections to their callers without swallowing them — the error-handling gap is in the callers, not the service.
+
+**New silent failure modes confirmed in this pass:**
+- `OllamaProvider._generate` continent preference drop (`src/services/ai/ollama.ts`): `pickRegion()` called without `request.continentPreferences` — mismatch with ClaudeProvider is silent; no log entry when user preferences are in effect, no fallback indicator in the response.
+- `getAIProvider()` per-request instantiation (`src/services/ai/index.ts`): each request receives a new `OllamaProvider` with a reset queue, silently re-introducing concurrent Ollama calls. No warning is emitted; the queue chaining runs correctly but on a queue that is always empty.
+- `POST /auth/resend-verification` missing try/catch (`src/routes/auth.ts`): Gmail transport failure surfaces as an unhandled async rejection — no structured log distinguishes email failure from token-creation failure; the 500 gives the client no actionable error code.
+- `POST /flows/:id/response` on inactive flow: dietary preference overwrite (`deleteMany + createMany`) proceeds with no `isActive` guard and no log entry — no audit trail distinguishes a legitimate response from a stale-client replay against a deactivated flow.
 ## ASSET:bug 2026-06-24 09:27 → Promise.allSettled isolates analyzer failures; ollamaSuggest timeout is safe; pluralStem and stemMatch degrade gracefully; three new silent failure modes confirmed
 
 **Robust paths confirmed in newly reviewed code:**
