@@ -16,6 +16,38 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:backend 2026-06-23 16:38 → Two new bugs — insight duplicate possible after constraint drop, YouTube quota burns on every generate; five from June 13 still open
+
+**Bug 6 — Insight duplicate race (new since June 14)**
+`src/services/ai/insights.ts` → `runInsightAnalysis()`:
+```ts
+const existing = await prisma.userInsight.findFirst({
+  where: { userId, category: c.category, status: "pending" },
+  ...
+});
+if (existing) {
+  return prisma.userInsight.update(...);
+}
+return prisma.userInsight.create(...);
+```
+The `findFirst` and `create` are two separate DB round-trips with no transaction. Before June 14, the `@@unique([userId, category])` constraint would reject the second create with a P2002 error. After migration `20260614000000_insights_drop_unique_add_history`, there is no uniqueness enforcement at the DB level. Two concurrent recipe saves for the same user can both pass the `findFirst` (seeing no pending insight) and both `create` a new pending row for the same category. The Redis `insights:cooldown` key (7-day TTL) prevents this in normal operation, but is lost on Redis restart.
+
+**Bug 7 — YouTube Data API quota consumed on recipe generate, not save**
+`src/routes/recipes.ts` `POST /recipes/generate` handler calls:
+```ts
+const [videoId, ogImageBuffer] = await Promise.all([
+  findRecipeVideo(aiRecipe.title, ...).catch(() => null),
+  generateOgImage(emoji).catch(() => null),
+]);
+```
+This fires on every generate, including recipes the user discards. A `search.list` call costs 100 YouTube API units; the default quota is 10,000 units/day — 100 generates (including discards) exhausts it. The video lookup should be deferred to `POST /recipes` (the save handler).
+
+**Still open from June 13:**
+- Bug 1: Pantry cap race (non-atomic count check + create for different ingredients)
+- Bug 2: Google OAuth callbackURL points to legacy `/auth/google/callback` (not `/1-1-1/auth/google/callback`)
+- Bug 3: `/stats` inflates zero counts to 10 via `Math.max(10, ...)`
+- Bug 4: Two separate Redis connections (`rateLimit.ts` and `insights.ts`) — no shared client
+- Bug 5: Apple Sign-In `audience` hardcoded to `"com.toifood.app"` in `src/routes/auth.ts`
 ## ISSUE:back 2026-06-23 15:14 → Five code-level issues identified in current backend
 
 **1. Registration does not auto-send verification email**
