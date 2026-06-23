@@ -10,6 +10,22 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->## ASSET:backend 2026-06-22 11:03 → Clean AIProvider abstraction, atomic Redis rate limiting, and fire-and-forget insight pipeline are well-designed
+## ASSET:backend 2026-06-23 14:32 -> Additions since 2026-06-13 — CookRecord route, AI insight engine, profile enrichment, RecipeReview model, daily digest with would/ CSV layout
+
+**CookRecord route** (`src/routes/cookRecords.ts`):
+Start/complete/abandon lifecycle. At start, pantry vs grocery split is computed via `pluralStem()` substring matcher (handles irregular plurals, invariant `ee$` words). `CookStatus` enum: `STARTED | COMPLETED | ABANDONED`. Route mounted at `/1-1-1/api/records`.
+
+**AI insight engine** (`src/services/ai/insights.ts`):
+Five analysis categories: `dietary`, `cuisine`, `style`, `pantry`, `mealType`. Triggered after recipe save via `runInsightAnalysis()`. Runs at most once per week per user (`insights:cooldown:{userId}` Redis key, 7-day TTL). Dismissed categories skipped for 7 days. Upserts `UserInsight` row in-place if pending; creates new row otherwise (history enabled by `20260614` migration removing unique constraint).
+
+**User profile enrichment** (`src/routes/users.ts`):
+`ageRange` (enum: `under_18 | 18_24 | 25_34 | 35_44 | 45_54 | 55_plus`) and `gender` (`male | female | non_binary | prefer_not_to_say`) added to `User`. `profileVisibility` JSON column controls which fields appear on `GET /users/:id/profile` (unauthenticated). Privacy keys: `memberSince`, `totalRecipeCount`, `sharedRecipeCount`, `preferences`, `continentPreferences`, `recipeStyle`.
+
+**RecipeReview model**:
+`stars` rating, unique per `(userId, recipeId)`, cascades on user and recipe delete. No dedicated route yet — `RecipeReview` is in the schema and FK-wired but not exposed via any router.
+
+**Daily digest** (`src/digest.ts`):
+Reads `would/RECIPE-METRIC.csv` and `would/DISCOVER-METRIC.csv`. Writes `would/DIGEST-METRIC.csv` (schema: `timestamp, recipeCount, discoverCount, ollamaRecipes, claudeRecipes, avgResponseMs, wiredMb, usableMb, ollamaStatus`). Infra health sourced from `/Users/jayagent/.openclaw/logs/infra_health.log`. Posts to Google Chat webhook.
 ## ASSET:backend 2026-06-23 11:23 → Architecture snapshot: Express/TS/Prisma/Redis, dual AI providers, OG image pipeline
 
 - Runtime: Node.js/TypeScript, Express 4, Prisma 5 (PostgreSQL), Redis (ioredis)
