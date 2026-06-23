@@ -10,6 +10,34 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->## ASSET:backend 2026-06-22 11:03 → Clean AIProvider abstraction, atomic Redis rate limiting, and fire-and-forget insight pipeline are well-designed
+## ASSET:back 2026-06-23 15:14 → Backend component inventory — services, models, and their dependencies
+
+| Component | File | Key Dependencies |
+|---|---|---|
+| Express server | `src/index.ts` | cors, passport, prisma, all routes |
+| Auth | `src/routes/auth.ts` | bcryptjs, jwt, passport, nodemailer, Apple JWKS, Google OAuth |
+| Recipes | `src/routes/recipes.ts` | ClaudeProvider, OllamaProvider, @napi-rs/canvas, nanoid, youtube |
+| Pantry | `src/routes/pantry.ts` | prisma (PantryItem, max 50) |
+| Cook records | `src/routes/cookRecords.ts` | prisma (CookRecord), pluralStem matcher |
+| Insights | `src/routes/insights.ts` + `src/services/ai/insights.ts` | prisma, ioredis, Ollama |
+| Lists | `src/routes/lists.ts` | prisma (SavedList, max 5 per user) |
+| Flows | `src/routes/flows.ts` | prisma (Flow, UserFlowView) |
+| Admin | `src/routes/admin.ts` | prisma, requireAdmin guard |
+| Chat bot | `src/routes/chat.ts` | pm2 exec, CSV read |
+| Store metrics | `src/routes/storeMetrics.ts` | appstore.ts (App Store Connect API), playstore.ts (Play Developer Reporting) |
+| Slack bot | `src/slack-bot.ts` | @slack/bolt (socket mode), pm2 exec |
+| Daily digest | `src/digest.ts` | Ollama, Google Chat webhook, PM2 logs, infra_health.log |
+| Store report | `src/storeReport.ts` | appstore.ts, playstore.ts, -ARCHIVE/-WOULD/*.md |
+| Rate limit | `src/middleware/rateLimit.ts` | ioredis, Lua INCR+EXPIRE |
+| Auth JWT | `src/middleware/auth.ts` | jsonwebtoken |
+| Claude AI | `src/services/ai/claude.ts` | Anthropic API, `claude-haiku-4-5-20251001`, prompt-version: claude-v5 |
+| Ollama AI | `src/services/ai/ollama.ts` | Local `http://127.0.0.1:11434`, qwen2.5:7b, prompt-version: ollama-v5 |
+| YouTube | `src/services/youtube.ts` | YouTube Data API v3, version: youtube-v6 |
+| Email | `src/services/email.ts` | nodemailer, Gmail SMTP |
+
+**DB models**: User, Recipe, RecipeReview, SavedList, SavedListItem, DietaryPreference, PantryItem, Flow, UserFlowView, UserInsight, CookRecord, PasswordResetToken, EmailVerificationToken
+
+---
 ## ASSET:backend 2026-06-23 14:32 -> Additions since 2026-06-13 — CookRecord route, AI insight engine, profile enrichment, RecipeReview model, daily digest with would/ CSV layout
 
 **CookRecord route** (`src/routes/cookRecords.ts`):
