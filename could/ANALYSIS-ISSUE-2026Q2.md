@@ -10,6 +10,22 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->## ISSUE:backend 2026-06-22 11:03 → pluralStem duplicated with divergent logic, storeReport.ts references archived paths, and no runtime request-body validation
+## ISSUE:backend 2026-06-23 14:32 -> Five new concerns — insights fire 5 parallel Ollama calls, CookRecord no dedup, insights auto-apply race, legacy routes persist, digest.ts missing mkdir guard
+
+**1. `src/services/ai/insights.ts` fires up to 5 simultaneous Ollama requests per user**
+`runInsightAnalysis()` runs all active analyzers via `Promise.allSettled`, each calling `ollamaSuggest()` — a fetch to the local Ollama instance. On the Mac Mini M4 this means up to 5 concurrent LLM inference loads per triggered user. No concurrency cap or queue exists. A user with enough recipes hitting the weekly cooldown expiry will saturate the GPU Metal buffer at the same time as recipe generation.
+
+**2. `POST /records/start` allows duplicate in-progress records** (`src/routes/cookRecords.ts`)
+No uniqueness guard prevents a user from calling `/start` multiple times for the same recipe. Concurrent taps or retries create multiple `STARTED` records that never transition unless `complete` or `abandon` is explicitly called. No TTL or sweep moves stale `STARTED` records to `ABANDONED`.
+
+**3. Insights accept race condition** (`src/routes/insights.ts`)
+`PATCH /insights/:id` with `status: "accepted"` auto-applies a dietary filter after checking `existing.length < 3`. Two concurrent accepts for different insights both pass the check and both call `create`, pushing the user past 3 filters and bypassing the cap enforced in `PATCH /users/me/preferences`.
+
+**4. Legacy routes still alive with no sunset mechanism**
+`src/index.ts` still mounts `/auth`, `/recipes`, `/users`, etc. alongside `/1-1-1/` versions. No app-version telemetry, no date, no deprecation metric to detect when legacy clients are gone.
+
+**5. `src/digest.ts` writes `would/DIGEST-METRIC.csv` without a mkdir guard**
+`recipes.ts` uses `fs.mkdirSync(dir, { recursive: true })` before writing metrics. `digest.ts` uses `fs.appendFileSync` directly with no directory existence check — if `would/` is absent on a fresh deploy or restore, the digest process throws and no Google Chat alert is posted.
 ## ISSUE:backend 2026-06-23 11:23 → Dual-route legacy layer, code duplication in ops tools, and unverified-user gap
 
 The codebase maintains a full duplicate route tree under `/` (1-1-0 legacy) alongside `/1-1-1/` (current), with no sunset mechanism, deprecation header, or timeline — both route sets remain live indefinitely. `src/routes/chat.ts` and `src/slack-bot.ts` share three identical helper functions (`getPm2Status`, `getRecentLogs`, `getMetricsSummary`) with no shared module. `POST /auth/register` returns a valid JWT without sending a verification email; `emailVerified` is never enforced as an access gate anywhere in the API, making the field effectively decorative. `storeReport.ts` still references a `-ARCHIVE/-WOULD/` file path that does not exist in the standard deployment layout and will silently fail at runtime.
