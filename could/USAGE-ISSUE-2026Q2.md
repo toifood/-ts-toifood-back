@@ -10,6 +10,22 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->## ISSUE:backend 2026-06-22 11:03 → groceryPct in RECIPE-METRIC.csv is incorrect, cook record usage not in any CSV, and DIGEST-METRIC.csv is undocumented
+## ISSUE:backend 2026-06-23 14:32 -> Cook session completion rate untracked in digest, digest.ts mkdir gap, infra health path hardcoded, rate-limit hits still generate no structured metric
+
+**1. Cook session completion rate absent from digest**
+`CookRecord` rows carry `status` (STARTED/COMPLETED/ABANDONED), `pantryCount`, `groceryCount`, and `completedAt`. `src/digest.ts` does not query `CookRecord` at all. The daily Google Chat digest reports recipe generation and discover counts but has zero visibility into how often users actually cook a generated recipe — a key product retention metric.
+
+**2. `digest.ts` writes `would/DIGEST-METRIC.csv` without mkdir guard**
+`src/routes/recipes.ts` uses `fs.mkdirSync(dir, { recursive: true })` before writing to `would/`. `src/digest.ts` calls `fs.appendFileSync` directly with no directory check. On a fresh deploy without pre-creating `would/`, the daily digest silently throws and the Google Chat message is never posted.
+
+**3. Infra health log path hardcoded to `/Users/jayagent/`**
+```ts
+const filePath = "/Users/jayagent/.openclaw/logs/infra_health.log";
+```
+Not configurable via env var. Rebuild or username change silently degrades digest to `"infra_health.log unreadable"` with no alert.
+
+**4. Rate-limit hit events (429) still generate no structured metric**
+Server request logger records `POST /1-1-1/api/recipes/generate 429` but no CSV row is appended. Hit rate by userId, role, and provider is unknown and cannot be queried or trended.
 ## ISSUE:backend 2026-06-23 11:23 → Local CSV metrics unqueryable remotely; no funnel event for generate-without-save; CookRecord data uncollected
 
 1. RECIPE-METRIC.csv and DISCOVER-METRIC.csv are written to the local Mac Mini filesystem — not accessible from anywhere except SSH. Only AUTH-METRIC.csv is cross-repo pushed to GitHub. No aggregation layer, no dashboard, no historical trend visible without direct filesystem access.
