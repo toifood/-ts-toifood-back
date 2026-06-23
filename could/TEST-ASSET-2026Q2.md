@@ -15,6 +15,21 @@ Existing test infrastructure, coverage breadth, CI test setup, test utilities
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:test 2026-06-24 09:27 → analyzePantry is an extractable pure function; ollamaSuggest timeout is mockable; pluralStem IRREGULAR table is a complete unit-test input set; runInsightAnalysis Redis NX is independently verifiable
+
+**No test infrastructure exists** (unchanged: no jest/vitest, no test script, no CI).
+
+**New testable structure identified this pass (not covered by prior entries):**
+
+- **`analyzePantry(recipes, pantryIngredients)`** (`src/services/ai/insights.ts`): takes two plain arrays and returns `InsightCandidate | null`. The function's only external dependency is `ollamaSuggest`, which can be replaced with a stub returning the `fallback` string by intercepting `fetch`. Table-driven tests can then assert exact `missing` arrays for given recipe/pantry combinations — directly validating the `Set.has` vs. `stemMatch` discrepancy without any DB setup.
+
+- **`ollamaSuggest` 8-second AbortController timeout**: the timeout path is independently testable by mocking `fetch` with a `Promise` that resolves after 9 seconds. A test can assert the function returns the `fallback` string rather than hanging — this is the highest-value timeout unit test in the service layer, requiring no Ollama instance.
+
+- **`pluralStem` IRREGULAR table** (`src/routes/cookRecords.ts`): the 16 irregular entries (`leaves→leaf`, `knives→knife`, `children→child`, etc.) form a complete expected-output table with zero setup. A 16-case unit test plus spot-checks for the `ee$` guard (`cheese`, `coffee`, `toffee`), the `oes$` rule (`tomatoes→tomato`), and the `ies$` rule (`berries→berry`) covers the full `pluralStem` function in under 40 lines. This is the second highest-signal/lowest-setup unit test target after `stemMatch` (noted in 2026-06-24 09:03 entry).
+
+- **`runInsightAnalysis` Redis NX cooldown** (`src/services/ai/insights.ts`): the cooldown key is `insights:cooldown:${userId}`. A test using `ioredis-mock` (or a real Redis instance) can set this key before calling `runInsightAnalysis` and assert zero `prisma.userInsight.create` calls occur — verifying the early-return path independently of the analyzer logic.
+
+- **`Promise.allSettled` analyzer isolation**: since each of the five analyzers (`analyzeDietary`, `analyzeCuisine`, `analyzeStyle`, `analyzePantry`, `analyzeMealType`) is a standalone async function with no shared mutable state, each can be unit-tested in isolation with stub data. A failing `analyzeCuisine` stub can be combined with passing stubs for the other four to verify that `runInsightAnalysis` still writes insights for the passing analyzers — confirming the `allSettled` isolation guarantee.
 ## ASSET:test 2026-06-24 09:03 → CookRecord snapshot design and stemMatch interface are immediately unit-testable; shared enum exports anchor contract tests
 
 **No test infrastructure exists** (unchanged from prior entries: no jest/vitest, no test script, no CI).
