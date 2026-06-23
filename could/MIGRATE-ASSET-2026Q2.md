@@ -16,6 +16,27 @@ Migration tooling, seed scripts, rollback coverage
 PATHS:
 prisma/
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:back 2026-06-23 15:14 → Prisma schema model summary and field counts
+
+| Model | Fields | Notable constraints |
+|---|---|---|
+| User | 20 | email unique, googleId unique, appleId unique, role enum (free/premium/admin) |
+| Recipe | 21 | shareToken unique, userId FK, ogImage Bytes? (growing) |
+| RecipeReview | 5 | unique [userId, recipeId] |
+| SavedList | 4 | userId FK, max 5 enforced in app only |
+| SavedListItem | 3 | PK [listId, recipeId] |
+| DietaryPreference | 5 | userId FK |
+| PantryItem | 5 | unique [userId, ingredient], cap 50 in app |
+| Flow | 8 | trigger enum (first_login, manual) |
+| UserFlowView | 8 | unique [userId, flowId] |
+| UserInsight | 10 | index [userId, category], status: pending/accepted/dismissed |
+| CookRecord | 15 | status enum (STARTED/COMPLETED/ABANDONED) |
+| PasswordResetToken | 5 | token unique, expiresAt |
+| EmailVerificationToken | 5 | token unique, expiresAt |
+
+**Current prompt versions**: claude-v5, ollama-v5, youtube-v6
+
+---
 ## ASSET:backend 2026-06-23 14:32 -> Migration snapshot — full schema state as of 2026-06-23, UserInsight uses non-unique index, RecipeReview/SavedList require raw SQL
 
 **Most recent tracked migration:** `20260614000000_insights_drop_unique_add_history`
