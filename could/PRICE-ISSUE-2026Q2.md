@@ -10,6 +10,24 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->## ISSUE:backend 2026-06-22 11:03 → No server-side purchase receipt validation; premium is admin-granted only; store metrics pipeline reads correctly but doesn't drive role changes
+## ISSUE:backend 2026-06-23 14:32 -> Rate limits unchanged, no payment webhook wired to role promotion, insight analysis has no tier gating, DB lookup on every rate-limited request
+
+**Rate limits unchanged from 2026-06-13 entry:**
+
+| Role | Ollama/hr | Claude/hr |
+|---|---|---|
+| free | 3 | 2 |
+| premium | 10 | 5 |
+| admin | unlimited | unlimited |
+
+**No payment path to `premium` role:**
+`src/services/appstore.ts` (Apple receipt validation) and `src/services/playstore.ts` (Google Play verification) exist but neither calls `prisma.user.update({ data: { role: "premium" } })`. The only way to set `role = "premium"` is a direct DB update or an admin action. There is no webhook, no IAP callback, and no `/subscribe` endpoint.
+
+**Insight analysis has no tier gating:**
+`runInsightAnalysis()` in `src/services/ai/insights.ts` is called without checking `User.role`. Free users receive AI-personalised insights identical to premium users. If insights are intended as a premium differentiator, the gate is missing.
+
+**DB lookup on every rate-limited generate request:**
+`recipeGenerateRateLimit()` calls `prisma.user.findUnique()` to fetch `role` on every invocation. At current scale this is acceptable, but it adds a synchronous DB round-trip before the Redis check on every recipe generate call.
 ## ISSUE:backend 2026-06-23 11:23 → No server-level Claude spend cap; YouTube searched twice per recipe; no aggregate quota protection
 
 1. Claude API (claude-haiku-4-5-20251001): called on every `provider=claude` request from premium users, up to 5 times per user per hour. No server-level daily or monthly spend cap exists in code — only per-user hourly Redis limits. Under a large number of concurrent premium users, Claude costs are unbounded.
