@@ -16,6 +16,51 @@ Retry logic, circuit breakers, backup mechanisms
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:backend 2026-06-23 14:32 -> Recovery checklist update — UserInsight uses non-unique index, would/ dir required, raw SQL for RecipeReview/SavedList unchanged
+
+**Restore sequence:**
+1. Restore PostgreSQL from backup
+2. Run `npx prisma migrate deploy` — covers all tracked migrations through `20260614`
+3. Apply raw SQL below for tables with no migration file
+4. Create `would/` directory
+5. Start app via PM2
+
+**Step 3 — Raw SQL (safe to re-run, all guards included):**
+```sql
+-- ── UserInsight: ensure non-unique index only ─────────────────────────────────
+ALTER TABLE "UserInsight" DROP CONSTRAINT IF EXISTS "UserInsight_userId_category_key";
+CREATE INDEX IF NOT EXISTS "UserInsight_userId_category_idx" ON "UserInsight"("userId","category");
+
+-- ── RecipeReview ──────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS "RecipeReview" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "userId" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
+  "recipeId" TEXT NOT NULL REFERENCES "Recipe"("id") ON DELETE CASCADE,
+  "stars" INTEGER NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "RecipeReview_userId_recipeId_key" UNIQUE ("userId","recipeId")
+);
+
+-- ── SavedList / SavedListItem ─────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS "SavedList" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "userId" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE,
+  "name" TEXT NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS "SavedListItem" (
+  "listId" TEXT NOT NULL REFERENCES "SavedList"("id") ON DELETE CASCADE,
+  "recipeId" TEXT NOT NULL REFERENCES "Recipe"("id") ON DELETE CASCADE,
+  "addedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY ("listId","recipeId")
+);
+```
+
+**Step 4 — Directory setup:**
+```bash
+mkdir -p /path/to/toifood-back/would
+```
+`RECIPE-METRIC.csv` and `DISCOVER-METRIC.csv` will be auto-created by `recipes.ts` on first generate. `DIGEST-METRIC.csv` will be created by `digest.ts` on next nightly run — but only if the directory exists.
 ## ASSET:recovery 2026-06-23 11:23 → AbortSignal timeouts per provider; Redis retry strategy; health endpoints; no circuit breakers present
 
 - Redis: `retryStrategy: (times) => Math.min(times * 200, 2000)` — reconnects with backoff up to 2s interval; `enableOfflineQueue: false` (fail fast, don't buffer)
