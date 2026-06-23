@@ -16,6 +16,22 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:bug 2026-06-24 09:27 → analyzePantry Set.has mismatch always marks pantry items missing; duplicate STARTED records; CookRecord terminal-state not enforced; Ollama silently drops dietary filters; insights Redis has no error handler
+
+**Bug 1 — `analyzePantry` compares full quantity strings against bare pantry names** (`src/services/ai/insights.ts`)
+`counts` keys are built from `r.ingredients` — full strings like `"2 cups flour"`. `pantrySet` is built from `pantryItem.ingredient` plain names like `"flour"`. `pantrySet.has("2 cups flour")` is always `false`, so every recipe ingredient is classified as missing from the user's pantry. The insight permanently suggests ingredients the user already owns. The cook-record path correctly uses `stemMatch` (substring include) for the same comparison; insights uses `Set.has` (exact match) — a silent behavioural discrepancy between the two pantry-matching paths.
+
+**Bug 2 — `POST /records/start` creates duplicate STARTED rows on retry** (`src/routes/cookRecords.ts`)
+`prisma.cookRecord.create` is called without first checking for an existing STARTED record for `{ userId, recipeId }`. There is no unique DB constraint on `(userId, recipeId, status)`. A double-tap or network retry produces two STARTED rows. `GET /records` returns both; the cook-history UI or any count-based analysis receives inflated data with no signal that the duplicate exists.
+
+**Bug 3 — `PATCH /records/:id/complete` and `/abandon` have no terminal-state guard** (`src/routes/cookRecords.ts`)
+Both handlers call `prisma.cookRecord.findFirst({ id, userId })` then update unconditionally — `existing.status` is never checked. An ABANDONED record can be re-completed (`status: "COMPLETED", completedAt: new Date()`), overwriting the terminal state. A COMPLETED record can be abandoned after the fact. No 400 is returned; the write silently succeeds.
+
+**Bug 4 — `OllamaProvider._generate` silently drops `request.dietaryFilters`** (`src/services/ai/ollama.ts`)
+`dietaryLine` is hardcoded to `""`. When `AI_PROVIDER=ollama` (the default), dietary filters submitted with the recipe request are never injected into the prompt. A user with `Vegan` or `NutFree` preferences receives recipes that may contain non-compliant ingredients. No error is returned, no log is emitted, and there is no fallback to Claude for filter-critical requests. The discrepancy between Ollama and Claude provider behaviour is not surfaced to the caller.
+
+**Bug 5 — `src/services/ai/insights.ts` Redis client has no `.on('error')` handler** (`src/services/ai/insights.ts`)
+`new Redis(...)` is instantiated at module load time with `enableOfflineQueue: false`. `ioredis` emits `'error'` events on connection failure. Without a listener on this client instance, Node.js treats the first emission as an unhandled `EventEmitter` error — which throws synchronously inside the process and would propagate to the `uncaughtException` handler in `src/index.ts`. If Redis is temporarily unavailable, every recipe generation (which triggers `runInsightAnalysis` via `.catch`) risks an unhandled error path on the insights Redis client independently of the rate-limiter Redis client.
 ## ISSUE:bug 2026-06-24 09:03 → Email change doesn't reset emailVerified; flow step bypasses 3-filter cap; save endpoint accepts unbounded arrays
 
 **Bug 1 — `PATCH /users/me` email change leaves emailVerified: true on new address** (`src/routes/users.ts:1695-1712`)
