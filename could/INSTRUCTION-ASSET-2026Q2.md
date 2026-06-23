@@ -16,6 +16,33 @@ Existing docs, README completeness, inline documentation
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:backend 2026-06-23 14:32 -> Instruction asset update — corrected metric paths (would/), DIGEST-METRIC schema, full 1-1-1 route map including records and insights
+
+**Corrected metric file paths (as of main branch):**
+
+| File | Directory | Written by | One row per |
+|---|---|---|---|
+| `RECIPE-METRIC.csv` | `would/` | `routes/recipes.ts` `appendMetric()` | Successful recipe generate |
+| `DISCOVER-METRIC.csv` | `would/` | `routes/recipes.ts` `appendDiscoverMetric()` | Discover query |
+| `DIGEST-METRIC.csv` | `would/` | `src/digest.ts` | Daily digest run |
+
+**RECIPE-METRIC.csv fields (19):** `timestamp, userId, requestedProvider, usedProvider, fallback, responseMs, style, filters, pantrySelectedCount, ingredientCount, steps, pantryMatchCount, pantryPct, groceryMatchCount, totalIngredients, groceryPct, promptVersion, continent, title`
+
+**DISCOVER-METRIC.csv fields:** `timestamp, userId, pantrySize, resultCount, avgPantryPct, avgGroceryPct`
+
+**DIGEST-METRIC.csv fields (9):** `timestamp, recipeCount, discoverCount, ollamaRecipes, claudeRecipes, avgResponseMs, wiredMb, usableMb, ollamaStatus`
+
+**1-1-1 API route map (complete as of 2026-06-23):**
+- `POST /1-1-1/auth/*` — auth routes
+- `GET|POST|PATCH|DELETE /1-1-1/api/recipes/*` — recipe CRUD and generate
+- `GET|PATCH|DELETE /1-1-1/api/users/me`, `GET /1-1-1/api/users/:id/profile`
+- `GET|POST|DELETE /1-1-1/api/pantry/*`
+- `GET|POST|DELETE /1-1-1/api/lists/*`
+- `GET|PATCH /1-1-1/api/insights`, `PATCH /1-1-1/api/insights/:id`
+- `POST /1-1-1/api/records/start`, `PATCH /1-1-1/api/records/:id/complete`, `PATCH /1-1-1/api/records/:id/abandon`, `GET /1-1-1/api/records`, `GET /1-1-1/api/records/:id`
+- `GET|POST /1-1-1/api/store-metrics/*`
+- `GET /1-1-1/system/flows`, `POST /1-1-1/system/admin/flows`
+- `GET /1-1-1/system/health`, `GET /1-1-1/system/stats`, `GET /1-1-1/system/app-config`
 ## ASSET:instruction 2026-06-23 11:23 → .env.example covers 14 core vars; scripts/macmini-setup.sh present; shared types package
 
 - `.env.example` documents: DATABASE_URL, JWT_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, AI_PROVIDER, OLLAMA_BASE_URL, OLLAMA_MODEL, OPENAI_API_KEY, ANTHROPIC_API_KEY, PORT, GMAIL_USER, GMAIL_APP_PASSWORD, APP_URL, GOOGLE_CHAT_WEBHOOK_URL, TOIFOOD_CROSS_REPO_TOKEN (15 entries)
