@@ -15,6 +15,20 @@ Missing test coverage, untested edge cases, flaky tests, gaps in integration and
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:test 2026-06-24 09:03 → CookRecord flow, flow dietary cap bypass, and email re-verification are entirely untested; stemMatch substring false positives have no regression coverage
+
+Zero test files remain (confirmed: no `*.spec.ts` / `*.test.ts` in tree; no test script in `package.json`). New untested paths not covered by prior entries:
+
+1. **`POST /records/start` → complete/abandon flow** (`src/routes/cookRecords.ts`) — No test for the three-state lifecycle (STARTED → COMPLETED/ABANDONED). Specifically:
+   - Multiple concurrent `POST /records/start` for the same `userId + recipeId` creates duplicate STARTED rows — no guard exists and no test catches it.
+   - `servings` edge cases: `0`, negative, `undefined` — the `> 0` guard falls back to `recipe.servings`, but `recipe.servings` itself could be `0` if the DB row was migrated from before the default.
+   - `stemMatch` false positive: `pluralStem("oil") = "oil"`, `pluralStem("foil") = "foi"` — the `includes` check (`as.includes(bs)`) would match `"oil"` against `"foil"` (`"foi".includes("oil")` is false, but `"oil".includes("foi")` is also false — actually this specific pair is safe). However `pluralStem("salt") = "sal"`, `pluralStem("salted") = "salted"` and `"salted".includes("sal")` = true — so "salt" would match "salted butter" correctly. Needs systematic table-driven tests.
+
+2. **`POST /flows/:id/response` dietary filter cap bypass** (`src/routes/flows.ts:55-64`) — A flow step returning 4+ filters writes all to DB, bypassing the 3-filter cap. No test exercises this path. Integration test should: create a flow, submit response with 4 valid DietaryFilter values, assert `prisma.dietaryPreference.count` ≤ 3.
+
+3. **`PATCH /users/me` email change** (`src/routes/users.ts:1695`) — No test verifies that changing email resets `emailVerified` to false (it currently does not). A test would expose the gap immediately: change email → fetch `/users/me` → assert `emailVerified: false`.
+
+4. **`GET /insights`** — The five parallel `prisma.userInsight.findFirst` calls are not integration-tested. A test with two pending insights in the same category should confirm only the most recent is returned. The `status: "pending"` filter also needs a test confirming dismissed/accepted insights are excluded.
 ## ISSUE:test 2026-06-23 21:39 → Zero test files and no test runner configured; all critical paths are completely untested
 
 The repo has no test framework and no test files. `package.json` contains no `jest`, `vitest`, or `mocha` dependency and no `test` script. No `.github/workflows/` CI file is present.
