@@ -16,6 +16,22 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:bug 2026-06-24 10:24 → OllamaProvider ignores continentPreferences; getAIProvider defeats queue serialization; resend-verification email uncaught; list name unbounded; inactive flow response accepted
+
+**Bug 1 — `OllamaProvider._generate` ignores `request.continentPreferences`** (`src/services/ai/ollama.ts`)
+`ClaudeProvider.generateRecipe` calls `pickRegion(request.continentPreferences)`, filtering the 65-region pool to the user's continent preferences. `OllamaProvider._generate` calls `pickRegion()` with no arguments — unconditionally sampling from all 65 regions. Since `AI_PROVIDER` defaults to `ollama`, the continent preference feature is silently broken for the majority of users: a user who set "Asia" as their sole preference receives recipes from any continent when Ollama is the active provider. The mismatch emits no log and returns no error code.
+
+**Bug 2 — `getAIProvider()` creates a new `OllamaProvider` instance per call, defeating queue serialization** (`src/services/ai/index.ts`, `src/services/ai/ollama.ts`)
+`OllamaProvider` serializes concurrent recipe generation via an instance-level `queue: Promise<unknown>` chained as `this.queue = this.queue.then(() => this._generate(request))`. This only works when the same instance handles every request. `getAIProvider()` returns `new OllamaProvider()` on every invocation — a fresh instance with a reset queue. If `getAIProvider()` is called inside the route handler (as the import pattern in `src/routes/recipes.ts` implies), each concurrent request runs its own isolated queue, all firing `_generate` simultaneously. The queue — whose sole purpose is to prevent concurrent Ollama calls — is made entirely inoperative by the factory pattern.
+
+**Bug 3 — `POST /auth/resend-verification` calls `sendVerificationEmail` without try/catch** (`src/routes/auth.ts`)
+`await sendVerificationEmail(user.email, token)` is called without an error boundary. `createTransport()` throws synchronously when `GMAIL_USER` or `GMAIL_APP_PASSWORD` are unset; `transport.sendMail` rejects on Gmail authentication failure or network error. The unhandled rejection propagates through the async route handler as an unintended 500. `POST /auth/forgot-password` (same file) wraps its equivalent call in `try { await sendPasswordResetEmail(...) } catch (err) { console.error(...) }` — the established pattern was not replicated for the resend path.
+
+**Bug 4 — `POST /lists` and `PATCH /lists/:id` accept unbounded `name` strings** (`src/routes/lists.ts`)
+Both handlers validate that `name` is non-empty (`!name.trim()` → 400) but impose no maximum length. The Prisma `SavedList.name` field is an unqualified `String` with no `@db.VarChar(n)` annotation. Within the 2 MB body limit an authenticated user can write a multi-kilobyte or multi-megabyte name, bloating the `SavedList` table and potentially breaking any client renderer that assumes bounded display strings.
+
+**Bug 5 — `POST /flows/:id/response` applies dietary preferences for deactivated flows** (`src/routes/flows.ts`)
+The handler verifies that the flow exists but does not check `flow.isActive`. `GET /flows/pending` filters to `isActive: true` so the mobile UI never surfaces a deactivated flow, but a client holding a stale `flowId` can still call `POST /flows/:id/response` after an admin disables the flow. The handler will silently delete all existing `DietaryPreference` rows and recreate them from the submitted step results — overwriting the user's dietary filters for a flow the admin has explicitly deactivated.
 ## ISSUE:bug 2026-06-24 09:27 → analyzePantry Set.has mismatch always marks pantry items missing; duplicate STARTED records; CookRecord terminal-state not enforced; Ollama silently drops dietary filters; insights Redis has no error handler
 
 **Bug 1 — `analyzePantry` compares full quantity strings against bare pantry names** (`src/services/ai/insights.ts`)
