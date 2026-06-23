@@ -16,6 +16,14 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:bug 2026-06-23 21:39 → OllamaProvider queue poisons itself on first error, blocking all subsequent requests
+
+`src/services/ai/ollama.ts:181` — `this.queue` is set to `this.queue.then(() => this._generate(request))`. If `_generate` rejects, `this.queue` becomes a permanently rejected promise. Every subsequent `generateRecipe` call chains on it and inherits the rejection immediately, meaning a single Ollama timeout or JSON parse error takes down all future Ollama generations until PM2 restarts the process.
+
+Additional bugs found:
+- `src/routes/pantry.ts` TOCTOU race: `pantryItem.count` and `pantryItem.create` are not atomic. Two concurrent POST /pantry requests can both pass the `count >= PANTRY_CAP` guard and push a user over the 50-item limit.
+- `src/routes/auth.ts:222-225` CSV header race: `fs.existsSync` → `fs.writeFileSync(header)` is non-atomic. Two concurrent first-ever auth events can race; one may write a data row where the header should be, corrupting the file.
+- `src/services/ai/insights.ts:456` analyzePantry: recipe ingredient strings include quantities (e.g. "2 cups flour") matched against bare pantry names (e.g. "flour") via `pantrySet.has(key)` — quantity prefixes prevent nearly all matches, silently producing no pantry insights even for heavy pantry users.
 ## ISSUE:backend 2026-06-23 16:38 → Two new bugs — insight duplicate possible after constraint drop, YouTube quota burns on every generate; five from June 13 still open
 
 **Bug 6 — Insight duplicate race (new since June 14)**
