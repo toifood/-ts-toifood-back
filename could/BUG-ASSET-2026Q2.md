@@ -16,6 +16,17 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:back 2026-06-23 15:14 → Bug inventory — location, severity, and reproduction path
+
+| # | Issue | File | Severity | Notes |
+|---|---|---|---|---|
+| 1 | No auto verification email on register | `src/routes/auth.ts` POST /register | Medium | sendVerificationEmail never called at registration |
+| 2 | Unbounded ogImageBase64 on save | `src/routes/recipes.ts` POST / | Low-Medium | No max-size check before writing Bytes to DB |
+| 3 | Dual pluralStem — simpler one misses irregular plurals | `src/routes/recipes.ts` ~L1021 | Low | cookRecords.ts version is more correct |
+| 4 | GET /recipes truncates at 500, no signal to client | `src/routes/recipes.ts` GET / | Medium | Hard `take: 500`, no totalCount in response |
+| 5 | Discover feed LIMIT 20, no pagination | `src/routes/recipes.ts` GET /discover | Low-Medium | Raw SQL, no cursor support |
+
+---
 ## ASSET:backend 2026-06-23 14:32 -> Bug prevention inventory update — new validations in cookRecords and insights, pluralStem correctness, atomic rate limit still in place
 
 **New validations added (cookRecords):**
