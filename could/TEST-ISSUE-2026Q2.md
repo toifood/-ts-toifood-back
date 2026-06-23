@@ -15,6 +15,19 @@ Missing test coverage, untested edge cases, flaky tests, gaps in integration and
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:test 2026-06-23 21:39 → Zero test files and no test runner configured; all critical paths are completely untested
+
+The repo has no test framework and no test files. `package.json` contains no `jest`, `vitest`, or `mocha` dependency and no `test` script. No `.github/workflows/` CI file is present.
+
+Highest-priority untested paths:
+1. **OllamaProvider queue cascade** (`src/services/ai/ollama.ts:181`) — a test firing two concurrent `generateRecipe` calls where the first rejects would immediately expose the poison-queue bug
+2. **Pantry cap enforcement** — the TOCTOU race in `src/routes/pantry.ts` requires concurrent integration tests against real Prisma to verify
+3. **Rate-limit Lua script** — the atomic INCR+EXPIRE logic in `src/middleware/rateLimit.ts:117-122` can only be verified against a live Redis instance
+4. **Auth flows** — register, login, Apple Sign In, Google OAuth callback, email verification, password reset have zero coverage
+5. **Discover SQL** — the `$queryRaw` in `src/routes/recipes.ts:1351` has pantryPct/groceryPct arithmetic untested with zero-pantry, partial-pantry, and full-pantry inputs
+6. **extractFoodEmoji** — 400+ keyword mappings in `src/services/ai/provider.ts:649` with ordering-sensitive last-position match logic have no regression tests
+7. **pluralStem divergence** — the simpler stemmer in `src/routes/recipes.ts:963` vs the irregular-plural-aware version in `src/routes/cookRecords.ts` produce different results for the same inputs; no tests catch divergence
+8. **Insight analysis thresholds** — `analyzeDietary` threshold of `max(2, floor(n * 0.3))` and the `MIN_RECIPES=5` guard in `src/services/ai/insights.ts` are behaviour-critical but entirely untested
 ## ISSUE:test 2026-06-23 11:23 → Zero test files, no test runner, no CI; rate limiting, auth, recipe fallback, and insights all untested
 
 The repository has no test files, no testing framework in devDependencies (no jest/vitest/mocha/tap), and no `test` script in package.json. No `.github/workflows/` directory exists. Critical untested paths include:
