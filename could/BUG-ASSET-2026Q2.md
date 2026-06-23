@@ -16,6 +16,19 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:bug 2026-06-24 09:27 → Promise.allSettled isolates analyzer failures; ollamaSuggest timeout is safe; pluralStem and stemMatch degrade gracefully; three new silent failure modes confirmed
+
+**Robust paths confirmed in newly reviewed code:**
+- `runInsightAnalysis` wraps all five analyzers in `Promise.allSettled` — a single failing analyzer (dietary, cuisine, style, pantry, mealType) does not block the others. Settled errors are discarded per-analyzer; partial results are written to the DB without propagating the rejection.
+- `ollamaSuggest` (`src/services/ai/insights.ts`) wraps the Ollama call in a `try/catch` with an 8-second `AbortController` timeout. On any error (timeout, parse failure, network drop), it returns the pre-computed `fallback` string — insight text generation failure is always non-fatal.
+- `pluralStem` IRREGULAR table explicitly handles `leaves`, `knives`, `feet`, `teeth`, `children`, and 10 other common English irregulars — naive `s`-stripping is skipped for these. The `ee$` invariant guard prevents `"cheese"` → `"chees"` corruption. The `oes$` rule correctly strips `tomatoes` → `tomato`.
+- `stemMatch` bidirectional include-check (`as.includes(bs) || bs.includes(as)`) ensures pantry matching at cook-start degrades gracefully for partial names — `"flour"` matches `"bread flour"` in either direction without requiring exact stems.
+- `GET /records` caps at `take: 100` (`src/routes/cookRecords.ts`) — no unbounded pagination exposure.
+
+**New silent failure modes confirmed in this pass:**
+- `analyzePantry` (`src/services/ai/insights.ts`): full quantity-prefixed ingredient strings (`"2 cups flour"`) are compared against bare pantry names via `Set.has` — exact match always fails, so every ingredient is flagged as missing regardless of pantry state. No log, no validation of ingredient string format before comparison.
+- `POST /records/start` has no STARTED-state check before `prisma.cookRecord.create` — duplicate STARTED rows accumulate silently; the only observable signal is inflated counts in cook history.
+- `PATCH /records/:id/complete` and `/abandon` have no `existing.status !== 'STARTED'` guard — terminal-state transitions (ABANDONED → COMPLETED, COMPLETED → ABANDONED) succeed silently with no log distinguishing a valid transition from an illegal re-drive.
 ## ASSET:bug 2026-06-24 09:03 → CookRecord and insights endpoints have tight ownership and state guards; three new input-boundary gaps identified
 
 **Robust paths confirmed:**
