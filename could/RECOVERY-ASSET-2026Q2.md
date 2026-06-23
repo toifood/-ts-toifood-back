@@ -16,6 +16,21 @@ Retry logic, circuit breakers, backup mechanisms
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:back 2026-06-23 15:14 → Failure mode matrix — component, behaviour, and recovery action
+
+| Component | Failure | Current behaviour | Recovery action |
+|---|---|---|---|
+| Redis | Unreachable | Rate limit fails open; usage returns free defaults | Restart Redis; rate counts resume next window |
+| Claude API | Error/timeout | Falls back to Ollama; fallback logged | Check ANTHROPIC_API_KEY; Claude auto-resumes |
+| Ollama | Down | Recipe generation returns 500; no fallback from Ollama | Restart Ollama process on Mac Mini |
+| YouTube API | Quota / error | Returns null videoId; recipe saves without video | Wait for quota reset (midnight PT); videoId can be back-filled via GET /recipes/youtube |
+| OG image | Canvas error | Recipe saves without ogImage; placeholder served | No action needed; image can't be regenerated post-save |
+| Gmail SMTP | Auth / limit | Route returns 500; user sees email send failure | Check app password; resend via /auth/resend-verification |
+| PostgreSQL | Connection lost | All DB routes return 500 | PM2 restart; `pm2 restart toifood-back` |
+| GitHub cross-repo push | Token expired | Auth metrics not synced to ts-toifood-dev | Rotate TOIFOOD_CROSS_REPO_TOKEN in env |
+| PM2 process | Crash | PM2 auto-restarts; restart_time increments | Monitor `!status` in Slack/Chat |
+
+---
 ## ASSET:backend 2026-06-23 14:32 -> Recovery checklist update — UserInsight uses non-unique index, would/ dir required, raw SQL for RecipeReview/SavedList unchanged
 
 **Restore sequence:**
