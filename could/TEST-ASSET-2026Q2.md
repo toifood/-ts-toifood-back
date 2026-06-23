@@ -15,6 +15,21 @@ Existing test infrastructure, coverage breadth, CI test setup, test utilities
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:test 2026-06-23 21:39 → No test infrastructure exists; codebase is architecturally well-suited for testing
+
+**Current state:**
+- No test framework in `package.json` (no `jest`, `vitest`, `mocha`, `tap`, etc.)
+- No `test` script in `package.json`
+- No test files in the repository (tree scan confirmed — `*.spec.ts`/`*.test.ts` filter returned nothing)
+- No CI pipeline visible (no `.github/workflows/` directory)
+
+**What makes the codebase testable when a framework is added:**
+- Express routes use `Router` — mountable in `supertest` without starting a real server
+- Prisma singleton in `src/lib/prisma.ts` — swappable with `jest.mock` or `prisma-mock`
+- Redis accessed via module-level singletons in `rateLimit.ts` and `insights.ts` — mockable with `ioredis-mock`
+- AI providers implement the `AIProvider` interface (`src/services/ai/provider.ts:641`) — easily stubbed for unit tests
+- Pure utility functions with no side effects: `extractFoodEmoji`, `inferEmojiFromTitle`, `pluralStem`, `buildStyleInstruction`, `avg`, `buildRecipeStats` — immediately unit-testable with no setup
+- `shared/src/index.ts` exports `DietaryFilter` and `RecipeStyle` enums importable in tests without any mocking
 ## ASSET:test 2026-06-23 11:23 → No testing framework, no test scripts, no CI config — test infrastructure is at zero
 
 - `package.json` scripts: `dev`, `build`, `start` only — no `test` script
