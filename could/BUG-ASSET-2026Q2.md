@@ -16,6 +16,40 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:backend 2026-06-23 16:38 → Bug prevention inventory update — new insight race risk, YouTube quota guard absent; existing defences unchanged
+
+**New risk since June 13:**
+
+| Risk | Location | Severity | Status |
+|---|---|---|---|
+| Insight duplicate on concurrent save after unique constraint drop | `src/services/ai/insights.ts` | Low (Redis cooldown mitigates 99%) | Open |
+| YouTube quota exhaustion on every generate (not just save) | `src/routes/recipes.ts` generate handler | Medium (100 generates/day hits limit) | Open |
+
+**Defences confirmed still present:**
+
+*Input validation:*
+- Register: email ≤100 chars, name ≤50, password 8–128
+- Generate: ingredients non-empty, each trimmed to ≤50 chars, max 50 items, servings positive, dietaryFilters enum-validated
+- Recipe note: ≤500 chars
+- Pantry: trimmed, non-empty, cap 50 enforced (still non-atomic for different ingredients — Bug 1)
+- Profile update: ageRange and gender validated against allowlists; newPassword 8–128
+- Lists: name non-empty, trimmed; max 5 lists enforced via count check (same race surface as pantry)
+- Cook records: recipeId required, ownership verified via `findFirst({ userId })`
+- Recipe review: stars validated 1–5
+
+*Duplicate-key / race handling:*
+- Pantry add: catches P2002 → 409 (same ingredient only; different-ingredient cap race still open)
+- Recipe share: idempotent, returns existing token
+- UserFlowView: upsert pattern
+- Rate limit: atomic Lua INCR+EXPIRE
+- SavedListItem: upsert prevents duplicate adds to same list
+
+*Auth hardening (unchanged):*
+- JWT on all protected routes
+- `requireAdmin` DB role check on `/admin/*` routes
+- Auth endpoints rate-limited 10 req / 15 min
+- bcrypt cost 12
+- Password reset tokens: 1hr expiry; email verification tokens: 24hr expiry
 ## ASSET:back 2026-06-23 15:14 → Bug inventory — location, severity, and reproduction path
 
 | # | Issue | File | Severity | Notes |
