@@ -10,6 +10,20 @@ REQUIRED FORMAT FOR EACH ISSUE ENTRY:
 ## ISSUE:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->## ISSUE:backend 2026-06-22 11:03 → pluralStem duplicated with divergent logic, storeReport.ts references archived paths, and no runtime request-body validation
+## ISSUE:back 2026-06-23 15:14 → Dual-provider AI architecture with local Ollama default and Claude Haiku premium tier
+
+The backend uses a two-tier AI strategy: Ollama (`qwen2.5:7b`, local Mac Mini) as the free default and `claude-haiku-4-5-20251001` as the premium path. When Claude fails, `src/routes/recipes.ts` falls back to Ollama and sets `fallback=true` in the RECIPE-METRIC CSV.
+
+Key architectural observations:
+- **Rate limiting** (`src/middleware/rateLimit.ts`): Redis-backed with a Lua atomic INCR+EXPIRE script to prevent race conditions. Free: 3 Ollama + 2 Claude /hr; Premium: 10 + 5; Admin: unlimited. Fails open on Redis unavailability.
+- **Metrics**: Auth, recipe, and discover events are appended to local CSV files under `would/`. Auth events additionally push to GitHub (`toifood-dev/ts-toifood-dev`) via REST with retry on 409.
+- **OG images**: Server-generated at recipe-generate time using `@napi-rs/canvas`, then stored as `Bytes` in the `Recipe` table. Older recipes fall back to a startup-generated placeholder.
+- **Insights pipeline** (`src/services/ai/insights.ts`): Triggered fire-and-forget after every recipe save. A Redis key enforces a 7-day per-user cooldown. Five categories: dietary, cuisine, style, pantry, mealType. Uses Ollama for personalised suggestion copy.
+- **Stats endpoint**: Simple 60-second in-memory cache (`let statsCache`) — single-process safe for Mac Mini deployment.
+- **Legacy routes**: The 1-1-0 path (`/recipes`, `/auth`, etc.) is still mounted alongside `/1-1-1/api/*`. Comment in `src/index.ts` says to keep alive until old app builds phase out.
+- **Pantry stem matching**: Two separate `pluralStem` implementations exist — a simple one in `src/routes/recipes.ts` and a more robust one with irregular plurals in `src/routes/cookRecords.ts`.
+
+---
 ## ISSUE:backend 2026-06-23 14:32 -> Five new concerns — insights fire 5 parallel Ollama calls, CookRecord no dedup, insights auto-apply race, legacy routes persist, digest.ts missing mkdir guard
 
 **1. `src/services/ai/insights.ts` fires up to 5 simultaneous Ollama requests per user**
