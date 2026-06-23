@@ -15,6 +15,19 @@ Missing test coverage, untested edge cases, flaky tests, gaps in integration and
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:test 2026-06-24 10:24 → OllamaProvider continent preference drop, getAIProvider queue bypass, resend-verification email error path, list name bounds, and inactive-flow response are entirely untested
+
+Zero test files remain (unchanged). New untested paths not covered by prior entries:
+
+1. **`OllamaProvider` ignoring `continentPreferences`** (`src/services/ai/ollama.ts`) — A test constructing a `GenerateRecipeRequest` with `continentPreferences: ["Asia"]`, calling `OllamaProvider.generateRecipe`, and asserting the prompt captured by a mocked `fetch` contains a country from Asia would immediately expose that `pickRegion()` is called with no arguments. This also serves as a regression guard for any future continent-preference fix in the Ollama path.
+
+2. **`getAIProvider()` per-call instantiation defeating queue serialization** (`src/services/ai/index.ts`, `src/services/ai/ollama.ts`) — A test calling `getAIProvider()` twice and asserting `result1 === result2` (same instance) would expose that a new `OllamaProvider` is constructed each time. An integration test firing two concurrent recipe generate requests via the route and asserting only one `fetch` call to Ollama was in flight at a time would verify queue serialization end-to-end.
+
+3. **`POST /auth/resend-verification` email failure propagates as 500** (`src/routes/auth.ts`) — A test mocking `nodemailer.createTransport` to throw (simulating missing `GMAIL_USER`) should assert the endpoint returns a defined non-500 error code or, at minimum, a structured JSON body. Currently `sendVerificationEmail` is uncaught and the rejection propagates through the handler as an unhandled async throw, returning an empty 500.
+
+4. **`POST /lists` and `PATCH /lists/:id` name length unbounded** (`src/routes/lists.ts`) — A test posting `name: "x".repeat(10_000)` should assert a 400 validation response. Currently the record is created successfully — the only protection is the global 2 MB body limit. A test asserting list creation is rejected above e.g. 100 characters would define and enforce the boundary.
+
+5. **`POST /flows/:id/response` on a deactivated flow** (`src/routes/flows.ts`) — A test that (a) creates a flow, (b) sets `isActive: false` via `PATCH /admin/flows/:id`, (c) POSTs a preferences step response, then (d) asserts `prisma.dietaryPreference.count` is unchanged would expose that the handler does not gate on `flow.isActive`. This also guards against stale-client replays overwriting live user preferences.
 ## ISSUE:test 2026-06-24 09:27 → analyzePantry pantry-match correctness, duplicate STARTED guard, terminal-state enforcement, Ollama dietary filter drop, and insights Redis resilience are entirely untested
 
 Zero test files remain (unchanged: no `*.spec.ts`/`*.test.ts`, no test script, no CI). New untested paths identified this pass that are not covered by prior entries:
