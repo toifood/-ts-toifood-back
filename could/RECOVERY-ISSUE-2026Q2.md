@@ -16,6 +16,23 @@ Failure scenarios, single points of failure, retry gaps
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:backend 2026-06-23 14:32 -> Recovery SQL must not recreate UserInsight unique index; would/ directory must be pre-created; infra health path is hardcoded to specific OS user
+
+**1. Unique index re-creation will break insight history**
+Migration `20260614000000_insights_drop_unique_add_history` intentionally dropped `UserInsight_userId_category_key`. Any restore SQL from a pre-2026-06-14 checklist that runs:
+```sql
+CREATE UNIQUE INDEX "UserInsight_userId_category_key" ON "UserInsight"("userId","category");
+```
+will either fail if history rows exist (duplicate `(userId, category)` pairs) or silently re-impose uniqueness that causes `runInsightAnalysis()` to lose insight history on next run.
+
+**2. `would/` directory must be created on restore**
+`src/digest.ts` uses `fs.appendFileSync` on `would/DIGEST-METRIC.csv` without a mkdir guard. `src/routes/recipes.ts` has `fs.mkdirSync(dir, { recursive: true })` and will self-heal, but `digest.ts` will throw on the first nightly run if `would/` is absent.
+
+**3. Infra health log path is hardcoded to OS user `jayagent`**
+```ts
+const filePath = "/Users/jayagent/.openclaw/logs/infra_health.log";
+```
+If the Mac Mini is rebuilt with a different username or the `.openclaw` directory is in a different location, `digest.ts` silently returns `"infra_health.log unreadable (permission denied)"` with no alert. This is not an env var.
 ## ISSUE:recovery 2026-06-23 11:23 → Ollama is SPOF for free tier; no circuit breakers on any external call; auth metric rows silently lost on GitHub push failure
 
 1. Ollama runs on a local Mac Mini. All free-tier recipe generation routes exclusively through Ollama — there is no cloud fallback. If the Mac Mini goes offline or Ollama crashes, every free user recipe request fails with a 500 until manually restarted. No monitoring or auto-restart is visible in code (PM2 is assumed but not verified from this codebase).
