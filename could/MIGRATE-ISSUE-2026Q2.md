@@ -16,6 +16,34 @@ Breaking schema changes, missing rollback, data loss risk
 PATHS:
 prisma/
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:back 2026-06-23 15:14 → Schema migration history and two upcoming migration needs
+
+**Recent migration history** (prisma/migrations/)
+- `20260330` — init (full schema)
+- `20260331` — add defaultServings
+- `20260401` — email verification + password reset tokens
+- `20260403` — pantry items; is_premium flag
+- `20260406` — recipe style field
+- `20260409` — emoji on Recipe
+- `20260410` — provider/style/mealType/pantryUsed on Recipe
+- `20260411` — cookTime (int)
+- `20260413` — Apple ID
+- `20260414` — remove favourite table
+- `20260415` — Flow system (Flow, UserFlowView); is_admin flag; adminOnly on Flow
+- `20260417` — recipe match data added then removed; SavedList
+- `20260420` — continent on Recipe
+- `20260505` — continentPreferences on User
+- `20260530` — updatedAt on Flow; FlowStep table dropped
+- `20260531` — CookRecord model; ageRange + gender on User
+- `20260614` — UserInsight: removed unique constraint, added updatedAt + resolvedAt (history tracking)
+
+**Upcoming migration needs identified from code review**
+
+1. **ogImage Bytes → external URL**: `Recipe.ogImage` stores PNG data as `Bytes` directly in PostgreSQL. As the recipe count grows this will significantly inflate DB size. Recommended: migrate to R2/S3, store a URL string instead. Requires backfilling existing images.
+
+2. **SavedList MAX_LISTS DB constraint**: The 5-list cap is enforced only in application code (`src/routes/lists.ts:557`). A direct DB write bypasses it. Add a DB-level check or a trigger to enforce `COUNT(*) <= 5` per user.
+
+---
 ## ISSUE:backend 2026-06-23 14:32 -> Migration 20260614 drops UserInsight unique constraint — restore SQL must not recreate it; RecipeReview/SavedList still untracked
 
 **`20260614000000_insights_drop_unique_add_history` — most recent tracked migration**
