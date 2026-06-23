@@ -16,6 +16,30 @@ Undocumented APIs, missing env vars, unclear onboarding steps
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:backend 2026-06-23 14:32 -> Metric files moved to would/ — all existing docs reference logs/ which is now wrong; four new undocumented endpoints and one new CSV
+
+**Critical: metric directory changed from `logs/` to `would/`**
+`src/routes/recipes.ts` sets:
+```ts
+const METRICS_PATH = path.join(process.cwd(), "would", "RECIPE-METRIC.csv");
+const DISCOVER_METRICS_PATH = path.join(process.cwd(), "would", "DISCOVER-METRIC.csv");
+```
+`src/digest.ts` reads and writes `would/RECIPE-METRIC.csv`, `would/DISCOVER-METRIC.csv`, and `would/DIGEST-METRIC.csv`.
+`INSTRUCTION-ASSET-V1.md` documents the path as `logs/RECIPE-METRIC.csv` — this file does not exist at that location. Any data script or cron job using the documented path will find nothing.
+
+**Undocumented CSV file: `would/DIGEST-METRIC.csv`**
+Written daily by `src/digest.ts`. Headers: `timestamp, recipeCount, discoverCount, ollamaRecipes, claudeRecipes, avgResponseMs, wiredMb, usableMb, ollamaStatus`. Not mentioned in any instruction document.
+
+**Undocumented API endpoints (1-1-1 namespace):**
+- `POST /1-1-1/api/records/start` — body: `{ recipeId, servings? }`
+- `PATCH /1-1-1/api/records/:id/complete`
+- `PATCH /1-1-1/api/records/:id/abandon`
+- `GET /1-1-1/api/records` and `GET /1-1-1/api/records/:id`
+- `GET /1-1-1/api/insights`, `PATCH /1-1-1/api/insights/:id`
+- `GET /1-1-1/api/users/:id/profile` (unauthenticated public endpoint)
+
+**Undocumented Recipe fields:**
+`methodNote: String?` and `ingredientNote: String?` added to the `Recipe` model — no instruction doc references these.
 ## ISSUE:instruction 2026-06-23 11:23 → No README; 13+ env vars missing from .env.example; deployment steps undocumented
 
 `.env.example` is present but missing at least 13 env vars referenced in source:
