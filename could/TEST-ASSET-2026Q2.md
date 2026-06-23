@@ -15,6 +15,21 @@ Existing test infrastructure, coverage breadth, CI test setup, test utilities
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:test 2026-06-24 10:24 → getAIProvider factory is the cleanest DI seam; email service is mockable with nodemailer stub; OllamaProvider queue is observable through fetch call counts; MAX_LISTS and flows handler are table-test ready
+
+**No test infrastructure exists** (unchanged: no jest/vitest, no test script, no CI).
+
+**New testable structure identified this pass:**
+
+- **`getAIProvider()` factory** (`src/services/ai/index.ts`): a six-line `switch` on `process.env.AI_PROVIDER`. Tests can set `process.env.AI_PROVIDER = "claude"` before calling `getAIProvider()` and assert `result instanceof ClaudeProvider` without mocking any HTTP. The factory is also the ideal place to introduce a module-level singleton (`let instance: AIProvider | null = null`) to fix the queue-bypass bug — a test asserting `getAIProvider() === getAIProvider()` would both verify the fix and act as a regression guard.
+
+- **`sendVerificationEmail` and `sendPasswordResetEmail`** (`src/services/email.ts`): both accept `(to: string, token: string)` with no shared state. Mocking `nodemailer.createTransport` with a `jest.fn()` spy returns a controllable `sendMail` stub. Tests can assert: correct `to` address, correct token embedded in the link, correct 24h vs. 1h expiry wording, and that the function rejects when `GMAIL_USER` is unset — covering the missing try/catch in `POST /auth/resend-verification` before the fix is applied.
+
+- **`OllamaProvider.queue` serialization** (`src/services/ai/ollama.ts`): the queue property is `private` but the serialization invariant is observable through `fetch` call timing. A test that mocks `fetch` with a controlled promise (resolves only when manually triggered), fires two `generateRecipe` calls concurrently on the same `OllamaProvider` instance, and asserts that the second `fetch` is not called until the first resolves — verifies the queue invariant with no HTTP or Ollama dependency. The same test structure exposes the `getAIProvider()` per-call instantiation bug when run through the factory.
+
+- **`MAX_LISTS` constant and TOCTOU shape** (`src/routes/lists.ts`): `MAX_LISTS = 5` is inlined with no configuration. The list-cap TOCTOU race (count-then-create, identical shape to pantry TOCTOU) is testable by firing six concurrent `POST /lists` requests against a real Prisma test database and asserting the final row count equals 5. The name-length gap requires only a single request with an oversized payload — lowest-setup boundary test in the lists module.
+
+- **`POST /flows/:id/response` handler structure** (`src/routes/flows.ts`): the preferences step application (`deleteMany + createMany`) is entirely self-contained. A test using supertest + a Prisma test database can: seed a flow with `isActive: false`, call the endpoint, and assert zero writes to `DietaryPreference` — directly validating the inactive-flow guard without mocking any AI or email dependency. The `upsert` idempotency for `UserFlowView` is testable in the same fixture by calling the endpoint twice and asserting a single row.
 ## ASSET:test 2026-06-24 09:27 → analyzePantry is an extractable pure function; ollamaSuggest timeout is mockable; pluralStem IRREGULAR table is a complete unit-test input set; runInsightAnalysis Redis NX is independently verifiable
 
 **No test infrastructure exists** (unchanged: no jest/vitest, no test script, no CI).
