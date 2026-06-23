@@ -16,6 +16,25 @@ Migration tooling, seed scripts, rollback coverage
 PATHS:
 prisma/
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:backend 2026-06-23 14:32 -> Migration snapshot — full schema state as of 2026-06-23, UserInsight uses non-unique index, RecipeReview/SavedList require raw SQL
+
+**Most recent tracked migration:** `20260614000000_insights_drop_unique_add_history`
+
+**UserInsight change (20260614):**
+```sql
+ALTER TABLE "UserInsight" DROP CONSTRAINT IF EXISTS "UserInsight_userId_category_key";
+CREATE INDEX IF NOT EXISTS "UserInsight_userId_category_idx" ON "UserInsight"("userId", "category");
+```
+
+**Tables requiring raw SQL on restore (no Prisma migration file):**
+
+| Table | Key columns | Constraints |
+|---|---|---|
+| `RecipeReview` | `id, userId, recipeId, stars, createdAt` | UNIQUE(userId, recipeId); CASCADE from User and Recipe |
+| `SavedList` | `id, userId, name, createdAt` | CASCADE from User |
+| `SavedListItem` | `listId, recipeId, addedAt` | PK(listId, recipeId); CASCADE from SavedList and Recipe |
+
+**All other tables have tracked migrations** via `_prisma_migrations`. Run `npx prisma migrate deploy` on restore — this covers `CookRecord`, `CookStatus`, `UserInsight` index, `User.ageRange`, `User.gender`, and all prior schema additions through `20260614`.
 ## ASSET:migrate 2026-06-23 11:23 → 28 Prisma migrations to PostgreSQL; no seed scripts; no rollback scripts; dump.rdb present
 
 - Total migrations: 28 (2026-03-30 → 2026-06-14)
