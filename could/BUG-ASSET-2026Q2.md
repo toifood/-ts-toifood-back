@@ -16,6 +16,21 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:bug 2026-06-23 21:39 → Strong error-handling baseline; four failure modes lack alerts or correction
+
+**Well-covered paths:**
+- Rate limiter fails open on Redis error (`src/middleware/rateLimit.ts:134-136`): warns and allows request through — correct sentinel behaviour
+- Recipe generation failure triggers `chatAlert` (`src/routes/recipes.ts:1044-1046`) and returns 500 with a user-facing message
+- `findRecipeVideo`, `generateOgImage`, `runInsightAnalysis` all fail silently via `.catch()` — appropriate for fire-and-forget paths
+- `process.on("unhandledRejection")` and `process.on("uncaughtException")` registered in `src/index.ts`
+- Apple auth failure triggers `chatAlert` (`src/routes/auth.ts:451-452`)
+
+**Gaps:**
+- `pushRowToGitHub` failure logs only a `console.warn` — auth metric data is silently lost; no alert and only retries on HTTP 409 SHA conflicts, not network errors
+- Pantry TOCTOU race produces no log — an over-cap item is silently created with no warning
+- `runInsightAnalysis` Redis failure propagates to caller as `console.warn` only — no alert on repeated Redis outages blocking all insight generation
+- No dead-queue detection in OllamaProvider: once `this.queue` is rejected every caller receives a throw but nothing resets it
+- `src/routes/users.ts:1802-1808` uses `as any` casts for `ageRange`/`gender` enum validation, suppressing TypeScript safety at a user-input boundary
 ## ASSET:backend 2026-06-23 16:38 → Bug prevention inventory update — new insight race risk, YouTube quota guard absent; existing defences unchanged
 
 **New risk since June 13:**
