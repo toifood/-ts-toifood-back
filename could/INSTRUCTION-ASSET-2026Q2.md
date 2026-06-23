@@ -16,6 +16,39 @@ Existing docs, README completeness, inline documentation
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:back 2026-06-23 15:14 → Environment variable reference and default values
+
+| Variable | Required | Default | Purpose |
+|---|---|---|---|
+| DATABASE_URL | Yes | — | PostgreSQL connection |
+| JWT_SECRET | Yes | — | JWT signing |
+| REDIS_URL | No | redis://localhost:6379 | Rate limiting + insights cooldown |
+| ANTHROPIC_API_KEY | No | — | Claude Haiku recipe generation |
+| GMAIL_USER | Yes (email) | — | Email sender address |
+| GMAIL_APP_PASSWORD | Yes (email) | — | Gmail app password |
+| YOUTUBE_API_KEY | No | — | Recipe video search |
+| CORS_ORIGIN | No | toifood.co.nz,app.toifood.co.nz | Allowed CORS origins (comma-sep) |
+| APP_URL | No | https://api.toifood.co.nz | Base URL for email links |
+| APP_WEB_URL | No | https://toifood.co.nz | Base URL for share links |
+| MIN_APP_VERSION | No | 1.0.6 | /app-config minimum version |
+| OLLAMA_BASE_URL | No | http://127.0.0.1:11434 | Local Ollama endpoint |
+| OLLAMA_MODEL | No | qwen2.5:7b | Ollama model name |
+| GOOGLE_CHAT_WEBHOOK_URL | No | — | Chat alerts + digest |
+| SLACK_BOT_TOKEN | No | — | Slack bot token |
+| SLACK_APP_TOKEN | No | — | Slack socket mode token |
+| TOIFOOD_CROSS_REPO_TOKEN | No | — | GitHub PAT for auth metric push |
+| AI_PROVIDER | No | ollama | Global default: ollama, claude, openai |
+| PORT | No | 3000 | Server listen port |
+| GOOGLE_CLIENT_ID | No | — | Google OAuth (skipped if unset) |
+| GOOGLE_CLIENT_SECRET | No | — | Google OAuth |
+| APPSTORE_KEY_ID | No | — | App Store Connect key ID |
+| APPSTORE_ISSUER_ID | No | — | App Store Connect issuer |
+| APPSTORE_PRIVATE_KEY | No | — | App Store Connect private key (\\n-escaped) |
+| APPSTORE_APP_ID | No | — | App Store app ID |
+| PLAY_SERVICE_ACCOUNT_JSON | No | — | Play Store service account JSON |
+| PLAY_PACKAGE_NAME | No | — | Android package name |
+
+---
 ## ASSET:backend 2026-06-23 14:32 -> Instruction asset update — corrected metric paths (would/), DIGEST-METRIC schema, full 1-1-1 route map including records and insights
 
 **Corrected metric file paths (as of main branch):**
