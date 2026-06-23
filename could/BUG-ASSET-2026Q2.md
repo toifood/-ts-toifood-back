@@ -16,6 +16,23 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:backend 2026-06-23 14:32 -> Bug prevention inventory update — new validations in cookRecords and insights, pluralStem correctness, atomic rate limit still in place
+
+**New validations added (cookRecords):**
+- `POST /records/start`: validates `recipeId` is a non-empty string; queries recipe with `{ id: recipeId, userId: req.userId! }` — prevents cross-user record injection.
+- `PATCH /records/:id/complete` and `/abandon`: fetches record with `{ id, userId: req.userId! }` before update — no IDOR path.
+- `pluralStem()` handles irregular plurals (`men→man`, `children→child`, etc.) and invariant forms (`/ee$/` guard prevents `cheese→chees`, `coffee→coffe`). Reduces false-positive pantry mismatches in `stemMatch()`.
+
+**New validations added (insights):**
+- `PATCH /insights/:id`: status must be strictly `"accepted"` or `"dismissed"` (400 otherwise).
+- Ownership check: `insight.userId !== req.userId` → 404.
+- State guard: `insight.status !== "pending"` → 400 (`INSIGHT_RESOLVED`).
+
+**Existing protections unchanged:**
+- Rate limit Lua eval in `rateLimit.ts`: `INCR` + `EXPIRE` in single atomic call — no race window.
+- Admin bypass is DB role-checked (`prisma.user.findUnique`) not JWT-trusted.
+- Pantry cap (50) still enforced in `routes/pantry.ts`.
+- Recipe generate: ingredients array non-empty, each ≤50 chars, max 50 items, servings positive, dietaryFilters enum-validated.
 ## ASSET:bug 2026-06-23 11:23 → Error handling coverage: Redis fail-open, fire-and-forget alert paths, validation boundaries
 
 - Rate limiter: Redis errors caught and logged; request proceeds (fail-open) — intentional but undocumented behaviour
