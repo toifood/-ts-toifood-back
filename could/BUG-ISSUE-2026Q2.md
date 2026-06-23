@@ -16,6 +16,24 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:back 2026-06-23 15:14 → Five code-level issues identified in current backend
+
+**1. Registration does not auto-send verification email**
+`POST /auth/register` in `src/routes/auth.ts` creates the user and returns a JWT but does not call `sendVerificationEmail`. Users must manually trigger `/auth/resend-verification`. This means all new registrations start unverified with no prompt. Severity: medium — `emailVerified` is not enforced on any current route.
+
+**2. ogImageBase64 on recipe save has no size guard**
+`POST /recipes` (`src/routes/recipes.ts:1169`) accepts `ogImageBase64` from the client and writes it directly to the DB as `Bytes`. A malformed or oversized payload could bloat the `Recipe` table. The generate endpoint produces ~200-400KB images — a client could send arbitrarily larger data.
+
+**3. Duplicate pluralStem implementations with different behaviour**
+`src/routes/recipes.ts` (line ~1021) uses a simple three-rule stem function. `src/routes/cookRecords.ts` (line ~183) uses a more robust version with an `IRREGULAR` map and a guard against `ee$` endings (e.g. `cheese`). The simpler version could produce wrong pantry matches (e.g. `cheese → chees`).
+
+**4. GET /recipes silently truncates at 500 recipes**
+`src/routes/recipes.ts:1310` uses `take: 500` with no `cursor` or `page` params and no indication in the response that results were truncated. A power user with >500 saved recipes will silently lose older ones from their list view.
+
+**5. Discover feed has no pagination and a fixed LIMIT 20**
+The raw SQL query in `src/routes/recipes.ts:1409` always returns `LIMIT 20` ordered by matchCount DESC then createdAt DESC. There is no `offset` or cursor support. As the shared recipe pool grows, users will always see the same top-20 pantry matches with no way to browse further.
+
+---
 ## ISSUE:backend 2026-06-23 14:32 -> Three new bugs — STARTED records never auto-expire, insights accept race, digest.ts missing mkdir crashes silently
 
 **Bug 1 — STARTED CookRecords never auto-timeout** (`src/routes/cookRecords.ts`)
