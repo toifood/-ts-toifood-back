@@ -10,6 +10,39 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->## ASSET:backend 2026-06-22 11:03 → Three active metric CSVs with clear schemas; daily digest posts to Google Chat with Ollama-summarised log analysis
+## ASSET:back 2026-06-23 15:14 → API endpoint surface summary with auth and rate-limit status
+
+| Method | Path (1-1-1 prefix) | Auth | Rate limit | Notes |
+|---|---|---|---|---|
+| POST | /auth/register | No | authLimiter (10/15min) | No auto verification email |
+| POST | /auth/login | No | authLimiter | Passport local strategy |
+| POST | /auth/apple | No | authLimiter | Apple JWT JWKS verification |
+| GET | /auth/google | No | — | Passport Google OAuth |
+| POST | /auth/forgot-password | No | authLimiter | Always 200 |
+| POST | /auth/reset-password | No | authLimiter | Token 1hr expiry |
+| GET | /auth/verify-email | No | — | Token 24hr expiry |
+| POST | /api/recipes/generate | JWT | recipeGenerateRateLimit | Ollama or Claude; OG image + video |
+| POST | /api/recipes | JWT | — | Save; triggers insights |
+| GET | /api/recipes | JWT | — | Up to 500, no cursor |
+| GET | /api/recipes/discover | JWT | — | Top 20, groceryPct >= 20% |
+| GET | /api/recipes/usage | JWT | — | Redis rate limit counters |
+| DELETE | /api/recipes/:id | JWT | — | Owner only |
+| POST | /api/records/start | JWT | — | Creates CookRecord |
+| PATCH | /api/records/:id/complete | JWT | — | Owner only |
+| PATCH | /api/records/:id/abandon | JWT | — | Owner only |
+| GET | /api/insights | JWT | — | Latest pending per category |
+| PATCH | /api/insights/:id | JWT | — | Accept/dismiss; auto-applies dietary |
+| GET/POST | /api/lists | JWT | — | Max 5 lists |
+| POST/DELETE | /api/lists/:id/recipes/:rid | JWT | — | List membership |
+| GET/PATCH | /api/users/me | JWT | — | Profile + preferences |
+| DELETE | /api/users/me | JWT | — | Full account deletion |
+| GET | /api/pantry | JWT | — | Max 50 items |
+| GET | /system/health | No | — | `{status:"ok"}` |
+| GET | /system/stats | No | — | Recipe + user count, 60s cache |
+| GET | /system/app-config | No | — | minVersion |
+| GET | /system/store-metrics | JWT+Admin | — | iOS + Android KPIs, 1hr cache |
+
+---
 ## ASSET:backend 2026-06-23 14:32 -> Usage inventory update — all CSVs in would/, DIGEST-METRIC schema, CookRecord DB signal, infra health source
 
 **Metric files (all in `would/` directory):**
