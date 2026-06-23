@@ -15,6 +15,21 @@ Existing test infrastructure, coverage breadth, CI test setup, test utilities
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:test 2026-06-24 09:03 → CookRecord snapshot design and stemMatch interface are immediately unit-testable; shared enum exports anchor contract tests
+
+**No test infrastructure exists** (unchanged from prior entries: no jest/vitest, no test script, no CI).
+
+**New testable structure identified this pass:**
+
+- **`CookRecord` JSON snapshot fields** (`prisma/schema.prisma` CookRecord model): `ingredients`, `pantryItems`, and `groceryItems` are stored as `Json` snapshots at cook-start time. This makes `POST /records/start` integration tests deterministic — the expected pantry/grocery split can be asserted directly on the created record without needing to re-query pantry state after the fact.
+
+- **`stemMatch(a, b): boolean`** (`src/routes/cookRecords.ts`): a two-argument pure boolean function with no imports or side effects. Table-driven unit tests can verify the `pluralStem` IRREGULAR table, the `ee$` invariant guard, and the `includes` substring logic in under 30 lines. This is the highest-signal/lowest-setup unit test target in the codebase — it also directly validates pantry matching correctness for the cook-record flow.
+
+- **`CATEGORIES` const** (`src/routes/insights.ts:9`): `["dietary", "cuisine", "style", "pantry", "mealType"]` — a test can import this array and assert `runInsightAnalysis` produces at most one pending insight per category, ensuring the `findFirst + create/update` logic is covered for the concurrent-create race.
+
+- **`shared/src/index.ts` enum exports** (`DietaryFilter`, `RecipeStyle`): importable in tests without any mocking or DB setup. Flow-response tests can use `Object.values(DietaryFilter).slice(0, 4)` to construct an over-limit filter payload without hardcoding strings, making the cap-bypass test resilient to enum changes.
+
+- **`AIProvider` interface** (`src/services/ai/provider.ts:641`): a one-method interface (`generateRecipe`) that can be stub-implemented in tests to verify fallback logic in `POST /recipes/generate` without starting Ollama or incurring Claude API calls.
 ## ASSET:test 2026-06-23 21:39 → No test infrastructure exists; codebase is architecturally well-suited for testing
 
 **Current state:**
