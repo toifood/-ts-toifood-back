@@ -10,6 +10,26 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->## ASSET:backend 2026-06-22 11:03 → Rate limit structure, role hierarchy, and store metric fetchers are clean and stable
+## ASSET:backend 2026-06-23 14:32 -> Pricing snapshot — role model, atomic Redis enforcement, app store validation present but not role-wired
+
+**Role model (unchanged):**
+```
+enum UserRole { free | premium | admin }
+User.role: UserRole @default(free)
+```
+
+**Rate limit enforcement (`src/middleware/rateLimit.ts`):**
+- Redis key: `ratelimit:{userId}:{provider}` (TTL 3600s, reset per-hour window)
+- Atomic increment via Lua eval: `INCR` + `EXPIRE` in single call — race-free
+- Admin bypass: role fetched from DB before Lua eval; admins short-circuit to `next()`
+- `getRecipeUsage(userId)` exported for `/users/me` usage display: returns `{ ollama: { used, max, ttl }, claude: { used, max, ttl } }`
+
+**App store validation present but not role-wired:**
+- `src/services/appstore.ts` — Apple receipt/subscription validation functions exist
+- `src/services/playstore.ts` — Google Play purchase verification exists
+- Neither file triggers `prisma.user.update({ data: { role: "premium" } })` — the IAP-to-role bridge is not implemented
+
+**Usage endpoint:** `GET /1-1-1/api/users/me` returns `role`, `isPremium`, `isAdmin` alongside rate usage data for client-side display.
 ## ASSET:backend 2026-06-23 11:23 → Claude haiku (1024 tokens, temp 1.0, 30s); Ollama local (no API cost); per-user hourly Redis rate limits
 
 - Claude: model=claude-haiku-4-5-20251001, max_tokens=1024, temperature=1.0, 30s AbortSignal timeout
