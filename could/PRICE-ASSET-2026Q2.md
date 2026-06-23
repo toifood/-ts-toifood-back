@@ -10,6 +10,20 @@ REQUIRED FORMAT FOR EACH ASSET ENTRY:
 ## ASSET:{NAME OF ENVIRONMENT} {YYYY-MM-DD HH:MM} -> {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->## ASSET:backend 2026-06-22 11:03 → Rate limit structure, role hierarchy, and store metric fetchers are clean and stable
+## ASSET:back 2026-06-23 15:14 → External service cost and quota reference
+
+| Service | Cost model | Free tier / quota | Config variable |
+|---|---|---|---|
+| Claude Haiku 4.5 | ~$0.0006/recipe | Pay-per-use | ANTHROPIC_API_KEY |
+| YouTube Data API | 100 units/search | 10,000 units/day | YOUTUBE_API_KEY |
+| Ollama (qwen2.5:7b) | Electricity only | Unlimited (local) | OLLAMA_BASE_URL, OLLAMA_MODEL |
+| PostgreSQL (ogImage) | Storage growth | Depends on host | DATABASE_URL |
+| Gmail SMTP | Free | ~500 emails/day | GMAIL_USER, GMAIL_APP_PASSWORD |
+| App Store Connect API | Free | Rate-limited by Apple | APPSTORE_* vars |
+| Play Developer Reporting | Free | Rate-limited by Google | PLAY_* vars |
+| Redis | Self-hosted | Unlimited (local) | REDIS_URL |
+
+---
 ## ASSET:backend 2026-06-23 14:32 -> Pricing snapshot — role model, atomic Redis enforcement, app store validation present but not role-wired
 
 **Role model (unchanged):**
