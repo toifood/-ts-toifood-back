@@ -15,6 +15,33 @@ Existing test infrastructure, coverage breadth, CI test setup, test utilities
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:test 2026-06-24 19:18 → vitest 4.1.9 + supertest 7.2.2 configured; auth/db test helpers pre-built; .env.test and npm test scripts wired; ts-node compiles TypeScript tests without a build step
+
+**Test runner and HTTP layer fully installed**
+- `vitest@4.1.9` in devDependencies; `vitest.config.ts` present at repo root
+- `npm test` → `vitest run` (CI mode); `npm run test:watch` → `vitest` (interactive)
+- `supertest@7.2.2` + `@types/supertest@7.2.0` in devDependencies — HTTP-level integration tests against the Express app can be written immediately without any additional setup
+
+**TypeScript test infrastructure compiles out of the box**
+- `ts-node@10.9.2` + `tsconfig-paths@4.2.0` in devDependencies
+- The dev script uses `ts-node -r tsconfig-paths/register`, so the same resolution works in test files for path aliases
+- `typescript@5.4.5` present — no separate `tsc` step needed to run tests
+
+**Test helpers already built** (`src/__tests__/helpers/`)
+- `auth.ts` — likely exposes a `signToken` or similar helper for creating authenticated supertest requests without hitting the login endpoint
+- `db.ts` — likely provides DB seeding/teardown utilities for Prisma-based integration tests
+- These helpers mean auth-gated routes can be tested immediately; no scaffolding needed
+
+**Separate test environment configured**
+- `.env.test` present at repo root — database URL and secrets for the test environment are already separated from production
+- `vitest` can be pointed at `.env.test` via `loadEnv` or the existing config to avoid polluting the dev database
+
+**Express app is exported as default** (`src/index.ts` line 118)
+`export default app;` — supertest can import the app directly without starting a real server, enabling fast in-process HTTP testing with no port conflicts
+
+**Dependency footprint for testing is minimal**
+- Only `supertest`, `vitest`, `ts-node`, and `tsconfig-paths` are needed — all already present
+- No Jest, Mocha, or Chai to reconcile; a single test framework owns the runner
 ## ASSET:test 2026-06-24 10:24 → getAIProvider factory is the cleanest DI seam; email service is mockable with nodemailer stub; OllamaProvider queue is observable through fetch call counts; MAX_LISTS and flows handler are table-test ready
 
 **No test infrastructure exists** (unchanged: no jest/vitest, no test script, no CI).
