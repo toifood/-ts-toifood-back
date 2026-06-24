@@ -15,6 +15,28 @@ Missing test coverage, untested edge cases, flaky tests, gaps in integration and
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:test 2026-06-24 19:18 → Zero test files exist beyond helpers; pluralStem logic, Apple JWT, Ollama queue, discover SQL, and insights cooldown all fully untested
+
+**No actual test files — only helpers exist**
+`src/__tests__/helpers/auth.ts` and `src/__tests__/helpers/db.ts` are present but there are zero `*.test.ts` or `*.spec.ts` files in the tree. Running `vitest run` reports 0 tests. The full route surface (auth, recipes, users, pantry, lists, flows, insights, cookRecords, storeMetrics) has no test coverage at all.
+
+**`pluralStem` / `stemMatch` logic is untested** (`src/routes/cookRecords.ts`)
+The function handles irregular plurals (`leaves→leaf`, `geese→goose`, `women→woman`), invariant plurals (`/ee$/` → no-op to protect `cheese`), and two standard stripping rules. These edge cases are business-critical — a wrong stem match incorrectly classifies pantry items as grocery items (or vice versa) in cook records. A table-driven unit test suite covering all irregular and invariant cases is completely absent.
+
+**OllamaProvider queue defeat has no regression test** (`src/routes/recipes.ts`, `src/services/ai/ollama.ts`)
+Because a new `OllamaProvider()` is instantiated per request, the `.queue` property does nothing across concurrent requests. There is no integration test that fires two simultaneous `/generate` calls and asserts serialised Ollama invocations — the defect is invisible without one.
+
+**Apple JWT verification path is untested** (`src/routes/auth.ts` `POST /auth/apple`)
+The JWKS fetch from `https://appleid.apple.com/auth/keys`, key-id matching, RS256 `jwt.verify` with audience `com.toifood.app`, and the `upsert` fallback path are all untested. An Apple key rotation or a malformed `identityToken` format change could break sign-in silently.
+
+**Discover feed raw SQL has no test** (`src/routes/recipes.ts` `GET /recipes/discover`)
+The `Prisma.$queryRaw` query performs a lateral join for pantry match counting, computes `pantryPct` and `groceryPct`, filters at `groceryPct >= 20`, and masks `authorProfileVisibility` fields. No test verifies the scoring logic, the 20 % floor, or that a user cannot see their own recipes in the feed.
+
+**Insight analysis Redis cooldown and dismissed-category suppression are untested** (`src/services/ai/insights.ts`)
+The `NX` flag on the cooldown key, the 7-day `dismissed` category filter, and all five `analyze*` functions have no tests. The `analyzePantry` function does a raw string-match against pantry items (no stemming) which could produce false negatives for ingredients with different casing or trailing spaces.
+
+**Rate limiter Lua script has no integration test** (`src/middleware/rateLimit.ts`)
+The atomic INCR + EXPIRE Lua script, role-based limit lookup, and the `getRecipeUsage` response shape are untested against a real or mocked Redis instance.
 ## ISSUE:test 2026-06-24 10:24 → OllamaProvider continent preference drop, getAIProvider queue bypass, resend-verification email error path, list name bounds, and inactive-flow response are entirely untested
 
 Zero test files remain (unchanged). New untested paths not covered by prior entries:
