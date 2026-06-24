@@ -16,6 +16,34 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:bug 2026-06-24 19:18 → Strong input validation at all boundaries; Lua atomic rate-limit counter; chatAlert on generation failures; try-catch on all metric file writes
+
+**Validation boundaries are well-enforced across all routes**
+- Auth: email ≤ 100 chars, name ≤ 50 chars, password 8–128 chars, checked before any DB call
+- Recipes: ingredients array validated (type, empty-string filtered, capped at 50 items, each sliced to 50 chars); `servings` falls back to 2 if not a positive number
+- Pantry: cap of 50 items enforced with an explicit count query before insert; P2002 duplicate key is caught and re-queried for the safe conflict response
+- Lists: `MAX_LISTS = 5` enforced with count query; name trimmed and non-empty validated
+- Users: dietary filters validated against `DietaryFilter` enum; max 3 filters enforced; `continentPreferences` filtered against the `VALID_CONTINENTS` allowlist; `ageRange` and `gender` validated against enum tuples before any DB write
+
+**Rate-limit counter uses a Lua atomic script** (`src/middleware/rateLimit.ts` ~line 514)
+The INCR + EXPIRE sequence is wrapped in a single `redis.eval` Lua call, eliminating the TOCTOU race where two concurrent requests both see count === 1 and the key never gets an expiry. This is the correct pattern.
+
+**Recipe generation failures are monitored** (`src/routes/recipes.ts` ~line 2170)
+`catch` block fires `chatAlert("🍽️ Recipe Generation Failed", ..., "error")` — failures are visible in Google Chat without polling logs.
+
+**All metric CSV writes are try-caught** (`src/routes/recipes.ts`, `src/routes/auth.ts`)
+`appendMetric`, `appendDiscoverMetric`, and `appendAuthMetric` each wrap the file operations in try-catch with `console.warn`, so a disk-full or permission error never propagates to the request handler.
+
+**Redis connection errors are isolated** (`src/middleware/rateLimit.ts` line 452, `src/services/ai/insights.ts` line 179)
+Both Redis clients have `enableOfflineQueue: false` and `retryStrategy` configured; `redis.on("error")` is registered to prevent unhandled rejection crashes.
+
+**`DELETE /users/me` manually orders deletions by FK dependency** (`src/routes/users.ts` ~line 3104)
+Models without `onDelete: Cascade` (DietaryPreference, PasswordResetToken, EmailVerificationToken) are deleted explicitly before the user row, avoiding FK violation. The deletion order is correct given the schema constraints.
+
+**Gaps noted**
+- `DELETE /users/me` runs 5 sequential Prisma operations with no transaction — a mid-sequence failure leaves the account in a partially deleted state with no rollback
+- No `chatAlert` on `prisma.user.create` failure in `register` or on `sendPasswordResetEmail` throw — auth path failures are silent to ops
+- `GET /users/:id/profile` has no `requireAuth` middleware — unauthenticated callers can probe any user ID for public profile data (likely intentional for public profiles, but worth confirming)
 ## ASSET:bug 2026-06-24 10:24 → P2002 catch on pantry duplicate is robust; list and flow ownership re-checks are tight; email service propagates rejections correctly; four new silent failure modes confirmed
 
 **Robust paths confirmed in newly read code:**
