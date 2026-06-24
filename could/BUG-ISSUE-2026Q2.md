@@ -16,6 +16,34 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:bug 2026-06-24 19:18 → OllamaProvider queue defeated per-request; register skips verification email; groceryMatchCount duplicates pantry stat; Redis down bypasses rate limit; YouTube/OG image blocks response
+
+**Bug 1 — `OllamaProvider` queue serialization is per-instance, not global** (`src/routes/recipes.ts`, `src/services/ai/ollama.ts`)
+`OllamaProvider.queue` is an instance property initialised to `Promise.resolve()`. `recipes.ts` instantiates `new OllamaProvider()` on every request, so every concurrent recipe generation gets a fresh instance with an empty queue. The intended serialisation does nothing — all concurrent Ollama calls fire in parallel. When the Ollama model is single-threaded the server queues on its side, but the backend intent is broken and any per-instance state (e.g., future retry counts) would be silently reset.
+
+**Bug 2 — `register` never sends a verification email** (`src/routes/auth.ts` ~line 768)
+After `prisma.user.create`, the handler signs a token and returns immediately. `sendVerificationEmail` is imported but never called from the register handler. New password-based accounts have `emailVerified: false` permanently unless the user manually hits `/resend-verification`. The `resend-verification` endpoint exists specifically for re-sends but there is no initial send.
+
+**Bug 3 — `groceryMatchCount` duplicates `pantryMatchCount` in CSV metrics** (`src/routes/recipes.ts` ~line 2116)
+```typescript
+const groceryMatchCount = pantryUsed.length; // should be grocery (non-pantry) items
+```
+Both `pantryMatchCount` and `groceryMatchCount` are assigned `pantryUsed.length`. The CSV columns `groceryMatchCount` and `groceryPct` always equal their pantry counterparts — grocery match data is silently wrong in every row written to `RECIPE-METRIC.csv`.
+
+**Bug 4 — Redis unavailable silently bypasses rate limiting** (`src/middleware/rateLimit.ts` ~line 531)
+The `catch` block in `recipeGenerateRateLimit` calls `next()` on any Redis error. A Redis outage (or cold restart) lets every user generate unlimited Claude and Ollama recipes. `getRecipeUsage` also returns `used: 0` on Redis error, so the frontend shows full quota available.
+
+**Bug 5 — `findRecipeVideo` and `generateOgImage` are awaited before responding** (`src/routes/recipes.ts` ~line 2143)
+```typescript
+const [videoId, ogImageBuffer] = await Promise.all([
+  findRecipeVideo(...).catch(() => null),
+  generateOgImage(emoji).catch(() => null),
+]);
+```
+Both calls are awaited in-flight before `res.json(...)`. A slow YouTube quota response or canvas failure directly delays the recipe response to the client. The `.catch(() => null)` prevents crashes but not latency spikes.
+
+**Bug 6 — `OllamaProvider._generate` ignores `continentPreferences`** (`src/services/ai/ollama.ts` line 483)
+`pickRegion()` is called with no arguments, sampling the full 65-region pool regardless of the user's continent preferences. `ClaudeProvider` calls `pickRegion(request.continentPreferences)` correctly. Users who set continent preferences only see them respected for Claude recipes — Ollama silently ignores them.
 ## ISSUE:bug 2026-06-24 10:24 → OllamaProvider ignores continentPreferences; getAIProvider defeats queue serialization; resend-verification email uncaught; list name unbounded; inactive flow response accepted
 
 **Bug 1 — `OllamaProvider._generate` ignores `request.continentPreferences`** (`src/services/ai/ollama.ts`)
