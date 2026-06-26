@@ -16,6 +16,24 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:bug 2026-06-26 13:51 → Insights cooldown set before MIN_RECIPES guard; dual pluralStem implementations diverge; analyzePantry uses exact match not stemming; cook record status transitions unchecked
+
+**Bug 1 — `runInsightAnalysis` sets Redis cooldown before the MIN_RECIPES guard** (`src/services/ai/insights.ts` line ~175)
+The `redis.set(cooldownKey, "1", "EX", ANALYSIS_COOLDOWN_SEC, "NX")` call executes first — before `recipes.length < MIN_RECIPES` is checked. Any user who saves their first recipe (triggering `runInsightAnalysis`) will have a 7-day cooldown set with zero insights generated. As they accumulate recipes past the 5-recipe threshold, analysis remains locked out for the full week. Move the cooldown set to after the `recipes.length >= MIN_RECIPES` gate.
+
+**Bug 2 — Two incompatible `pluralStem` implementations cause inconsistent pantry matching** (`src/routes/recipes.ts` ~line 220 vs `src/routes/cookRecords.ts` ~line 7)
+`recipes.ts` inline-defines a 3-rule naive stemmer: `replace(/oes$/i, "o")`, `replace(/ies$/i, "y")`, `replace(/s$/i, "")`. This last rule strips 's' from everything — "cheese"→"chees", "glass"→"glas", "gas"→"ga" — producing wrong stems. `cookRecords.ts` uses a full irregular-plural table + `/ee$/` invariant guard + conservative stripping. Pantry match results differ between the generate response (`pantryUsed`) and the cook record start endpoint for the same ingredient set; user-visible pantry stats are silently inconsistent.
+
+**Bug 3 — `analyzePantry` uses exact string match, not stemming** (`src/services/ai/insights.ts` ~line 128)
+```typescript
+const pantrySet = new Set(pantryIngredients.map((p) => p.toLowerCase().trim()));
+// later:
+.filter(([ing, count]) => !pantrySet.has(ing) && count >= threshold)
+```
+Recipe ingredients are accumulated as-is from the AI output (e.g., "tomatoes", "diced onions"). The pantry set contains raw user entries (e.g., "tomato", "onion"). `pantrySet.has("tomatoes")` is false even though the user has "tomato" — the ingredient is flagged as missing and surfaces in the pantry insight suggestion. Users will receive suggestions to add items they already have.
+
+**Bug 4 — Cook record status transitions are unchecked** (`src/routes/cookRecords.ts` ~lines 64 and 88)
+`PATCH /:id/complete` and `PATCH /:id/abandon` both find the record by `{ id, userId }` and update immediately. Neither checks `existing.status`. A COMPLETED record can be re-abandoned (resetting `completedAt` to null implicitly), and an ABANDONED record can be marked COMPLETED and given a new `completedAt`. Cook history data becomes unreliable.
 ## ISSUE:bug 2026-06-24 19:18 → OllamaProvider queue defeated per-request; register skips verification email; groceryMatchCount duplicates pantry stat; Redis down bypasses rate limit; YouTube/OG image blocks response
 
 **Bug 1 — `OllamaProvider` queue serialization is per-instance, not global** (`src/routes/recipes.ts`, `src/services/ai/ollama.ts`)
