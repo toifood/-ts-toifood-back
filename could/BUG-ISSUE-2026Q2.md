@@ -16,6 +16,19 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:bug 2026-06-27 10:49 → Email change never resets emailVerified; admin role leaked via public recipe endpoint
+
+**Finding — `src/routes/users.ts` (PATCH /users/me)**
+When a user changes their email address, `emailVerified` is never reset to `false` and no verification email is sent to the new address. The `prisma.user.update` call does not include `emailVerified: false` or trigger `sendVerificationEmail`. A previously-verified user can change their email to any address they do not own and immediately hold a verified identity.
+
+**Finding — `src/routes/recipes.ts` (GET /public/:token, ~line 871)**
+The public recipe endpoint returns `author.role` in the response body — including the value `"admin"` for admin accounts. Any unauthenticated caller can enumerate shared recipes and identify which accounts hold admin privileges by inspecting the `role` field.
+
+**Finding — `src/services/ai/insights.ts` (runInsightAnalysis)**
+The Redis cooldown key is set (`NX`, 7-day TTL) before any analysis runs. If all AI analyzers fail because Ollama is unreachable, `candidates` is empty and no insights are written — but the cooldown key is already locked. The user is silenced for a full week on each transient outage, regardless of how quickly the service recovers.
+
+**Finding — `src/digest.ts` (~line 80)**
+The infra health log is read from a hardcoded absolute path: `/Users/jayagent/.openclaw/logs/infra_health.log`. If the process runs on any host other than the dev Mac Mini this path will never exist, and every daily digest will permanently report "infra_health.log not found" without raising any alert.
 ## ISSUE:bug 2026-06-26 19:17 → Register route never sends verification email
 
 **Finding — `src/routes/auth.ts:226-234`**
