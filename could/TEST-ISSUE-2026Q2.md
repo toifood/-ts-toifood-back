@@ -15,6 +15,19 @@ Missing test coverage, untested edge cases, flaky tests, gaps in integration and
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:test 2026-06-27 10:49 → Password reset flow, user update, cook-record lifecycle, and admin guard have no test coverage
+
+**Finding — `src/__tests__/auth.test.ts` (password reset and email verification flows missing)**
+The full email-based flows — `POST /auth/forgot-password`, `POST /auth/reset-password`, `GET /auth/verify-email`, and `POST /auth/resend-verification` — are absent from the test suite. These flows involve token creation, expiry checks, and database state transitions that are difficult to verify manually and easy to break silently.
+
+**Finding — `src/__tests__/users.test.ts` (missing or incomplete)**
+`PATCH /users/me` (name, email, password update), `PATCH /users/me/preferences`, `PATCH /users/me/privacy`, and `DELETE /users/me` have no test coverage. The email-change-without-reverification bug (`emailVerified` never reset) is invisible to CI because the update path is entirely untested.
+
+**Finding — `src/__tests__/cookRecords.test.ts` (missing)**
+The cook record lifecycle — `POST /records/start` (pantry ingredient matching via `pluralStem`/`stemMatch`), `PATCH /:id/complete`, and `PATCH /:id/abandon` — has zero coverage. The stemming logic (irregular plurals, `ee` invariant guard, standard `-s` stripping) is the most likely source of silent regressions in the cook flow.
+
+**Finding — `src/routes/admin.ts` (requireAdmin guard untested)**
+`requireAdmin` is a middleware applied to all admin routes. Both the 403 rejection path (non-admin user) and the 200 success path (admin user) are untested. A refactor that breaks the admin guard would pass all current tests undetected.
 ## ISSUE:test 2026-06-26 19:17 → Core generation path and rate-limit middleware have zero test coverage
 
 **Finding — `src/__tests__/recipes.test.ts` (missing generate coverage)**
