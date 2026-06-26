@@ -15,6 +15,15 @@ Existing test infrastructure, coverage breadth, CI test setup, test utilities
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:test 2026-06-26 19:17 → Test gaps mapped to four actionable areas: generate route, rate limiter, insight analysis engine, and OAuth flows
+
+**Generate route (`src/__tests__/recipes.test.ts`)** — Add tests that mock `getAIProvider` / `ClaudeProvider` and exercise: (1) Claude succeeds → response includes `pantryUsed` derived by stem matching; (2) Claude throws → Ollama fallback used and `provider: "ollama"` returned; (3) ingredient sanitisation rejects empty/oversized arrays. Mock `generateOgImage` and `findRecipeVideo` (already mocked) to keep tests fast.
+
+**Rate limiter (`src/middleware/rateLimit.ts`)** — Unit-test `recipeGenerateRateLimit()` with a mocked `ioredis` instance: (1) first N requests succeed for each role; (2) request N+1 returns 429 with correct `retryAfter`; (3) admin role bypasses the check entirely; (4) Redis error → request passes through (fail-open). Test `getRecipeUsage` separately for the Redis-down path.
+
+**Insight analysis engine (`src/services/ai/insights.ts`)** — Test `runInsightAnalysis` directly (not via HTTP): (1) fewer than 5 recipes → returns without writing; (2) cooldown key already set → returns without writing; (3) dismissed category within 7 days → that category skipped; (4) `analyzeDietary` threshold logic with varied tag counts. Mock Ollama fetch to return deterministic suggestions.
+
+**OAuth flows (`src/__tests__/auth.test.ts`)** — For Apple: mock `getCachedAppleKeys` and `jwt.verify` to test the happy path and key-not-found / verify-failure branches. For Google callback: test that a valid `req.user` produces a JWT redirect and a missing user returns 401. These can be tested at the route level by injecting a fake passport authenticate stub.
 ## ASSET:test 2026-06-26 13:51 → db.ts teardown respects FK order in a single transaction; fileParallelism:false prevents DB contention; hookTimeout:30000 covers slow teardown; app exported as default enabling in-process supertest
 
 **`db.ts` teardown deletes in FK-dependency order inside a single transaction** (`src/__tests__/helpers/db.ts`)
