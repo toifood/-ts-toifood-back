@@ -16,6 +16,16 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:bug 2026-06-26 19:17 → Register route never sends verification email
+
+**Finding — `src/routes/auth.ts:226-234`**
+`POST /auth/register` creates the user with `emailVerified: false` and immediately returns a JWT, but never creates an `EmailVerificationToken` or calls `sendVerificationEmail`. The only way a password-registered user ever gets a verification email is by manually calling `POST /auth/resend-verification`. The `emailVerified` field is set but the mechanism to flip it is never triggered at sign-up, meaning the feature is silently broken for all new password registrations.
+
+**Finding — `src/routes/recipes.ts:1231-1236` vs `src/routes/cookRecords.ts`**
+The discover feed's raw SQL matches pantry items with `LOWER(pu) IN (SELECT LOWER(ingredient) FROM "PantryItem" ...)` — exact lowercase only. Both `POST /records/start` and the pantry-used derivation in `POST /recipes/generate` use the `pluralStem()` helper (e.g. "tomatoes" → "tomato"). A user with "tomatoes" in their pantry sees 0% match in Discover for a recipe that lists "tomato", but a high match when they open the same recipe in Cook mode. Discover match scores are systematically deflated versus what users experience elsewhere.
+
+**Finding — `src/middleware/rateLimit.ts:30-46`**
+`getRecipeUsage()` returns `{ used: 0, max: LIMITS.free.ollama, ttl: 0 }` on any Redis error. The enforcement middleware correctly skips limiting when Redis is down, but `GET /recipes/usage` (polled by the frontend usage counter) will always show a full quota during an outage. Users who already hit their limit see it reset to zero in the UI while the actual limit is unenforced — misleading in both directions.
 ## ISSUE:bug 2026-06-26 13:51 → Insights cooldown set before MIN_RECIPES guard; dual pluralStem implementations diverge; analyzePantry uses exact match not stemming; cook record status transitions unchecked
 
 **Bug 1 — `runInsightAnalysis` sets Redis cooldown before the MIN_RECIPES guard** (`src/services/ai/insights.ts` line ~175)
