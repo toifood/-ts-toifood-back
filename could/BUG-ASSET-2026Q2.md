@@ -16,6 +16,15 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:bug 2026-06-27 10:49 → Four additional logic gaps: email reverification skip, admin role leak, insight cooldown before analysis, hardcoded log path
+
+**Email change without reverification (`src/routes/users.ts:PATCH /users/me`)** — Add `emailVerified: false` to the `prisma.user.update` data block whenever `email` changes, then delete any existing `EmailVerificationToken` rows for the user and call `sendVerificationEmail` with a fresh token — mirroring the pattern in `POST /auth/resend-verification`.
+
+**Admin role leak (`src/routes/recipes.ts:GET /public/:token`)** — Remove `role` from the public `author` object. The `isPremium` boolean (`role !== "free"`) exposes the same business information without revealing admin designation. The `GET /users/:id/profile` public endpoint exposes `role` in `author.role` for the same reason and needs the same fix.
+
+**Insight cooldown set prematurely (`src/services/ai/insights.ts:runInsightAnalysis`)** — Move `redis.set(cooldownKey, ...)` to after analyzers complete and at least one candidate is produced. Alternatively apply a short TTL (e.g., 1 h) on failure so a transient Ollama outage does not block insight generation for the full 7-day window.
+
+**Hardcoded infra log path (`src/digest.ts`)** — Replace the literal path with `process.env.INFRA_HEALTH_LOG_PATH ?? "/Users/jayagent/.openclaw/logs/infra_health.log"` and add `INFRA_HEALTH_LOG_PATH=` to `.env.example`. Log a startup warning if the resolved path does not exist so omission is visible rather than silent.
 ## ASSET:bug 2026-06-26 19:17 → Three confirmed logic gaps: missing email send, mismatched pantry stem matching, Redis-down usage counter
 
 **Register verification gap (`src/routes/auth.ts:226-234`)** — User is created and token returned but `sendVerificationEmail` is never called. Fix: create an `EmailVerificationToken` and call `sendVerificationEmail` immediately after `prisma.user.create`, mirroring the pattern in `POST /auth/resend-verification` (lines 487-499).
