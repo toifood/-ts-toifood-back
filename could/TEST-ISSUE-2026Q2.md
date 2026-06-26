@@ -15,6 +15,19 @@ Missing test coverage, untested edge cases, flaky tests, gaps in integration and
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:test 2026-06-26 19:17 → Core generation path and rate-limit middleware have zero test coverage
+
+**Finding — `src/__tests__/recipes.test.ts` (missing generate coverage)**
+`POST /recipes/generate` is the most complex route in the codebase — AI provider selection, Claude→Ollama fallback, `pantryUsed` derivation, ingredient sanitisation, OG image generation, YouTube fetch, and metrics writing. The test file mocks `runInsightAnalysis`, `chatAlert`, and `findRecipeVideo` but never calls `/generate` once. Any regression in the fallback path or the `pluralStem` pantry derivation is completely invisible to CI.
+
+**Finding — `src/middleware/rateLimit.ts` (no tests)**
+The Redis Lua script for atomic increment-and-expire, the role-based limit table (`free: 3/2`, `premium: 10/5`, `admin: 999/999`), the admin bypass, and the `getRecipeUsage` Redis-down fallback all have zero coverage. The rate limiter is the primary abuse-prevention mechanism; a silent regression here would allow unlimited generation.
+
+**Finding — `src/services/ai/insights.ts` (runInsightAnalysis untested)**
+`insights.test.ts` exercises only the HTTP GET/PATCH layer. The actual `runInsightAnalysis` function — weekly Redis cooldown key, 5-recipe minimum, per-category dismissed-category skip, and the five analysis sub-functions — has no test. The Ollama `ollamaSuggest` timeout/fallback path is also untested.
+
+**Finding — `src/__tests__/auth.test.ts` (Apple and Google flows missing)**
+`POST /auth/apple` (JWKS cache, RS256 `jwt.verify`, email fallback for private relay) and the Google OAuth callback are untested. These are the most integration-heavy auth flows and the first place to break if Apple rotates keys or the bundle ID changes.
 ## ISSUE:test 2026-06-26 13:51 → runInsightAnalysis cooldown-before-threshold ordering untested; cook record invalid status transitions untested; analyzePantry stemming gap untested; pushRowToGitHub retry logic untested; duplicate recipe title check untested
 
 **`runInsightAnalysis` cooldown-set-before-MIN_RECIPES ordering has no test** (`src/services/ai/insights.ts`)
