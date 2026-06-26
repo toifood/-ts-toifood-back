@@ -15,6 +15,19 @@ Existing test infrastructure, coverage breadth, CI test setup, test utilities
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:test 2026-06-26 13:51 → db.ts teardown respects FK order in a single transaction; fileParallelism:false prevents DB contention; hookTimeout:30000 covers slow teardown; app exported as default enabling in-process supertest
+
+**`db.ts` teardown deletes in FK-dependency order inside a single transaction** (`src/__tests__/helpers/db.ts`)
+`beforeEach` wraps all `deleteMany` calls in `prisma.$transaction([...])` and orders them from most-dependent to least: `SavedListItem` → `SavedList` → `CookRecord` → `UserInsight` → ... → `User`. This avoids FK constraint violations without disabling constraints, keeps teardown atomic (no partial clears on test crash), and is safe against Prisma's batched-transaction semantics.
+
+**`fileParallelism: false` in vitest config prevents test-database contention** (`vitest.config.ts` line ~10)
+With `fileParallelism: false`, test files run serially. Because all files share the same `postgresql://…/toifood_test` database and the `beforeEach` teardown in `db.ts` is registered globally via `setupFiles`, serial execution guarantees a clean database at the start of every test without needing per-file transactions or isolated schemas.
+
+**`hookTimeout: 30000` gives teardown enough headroom** (`vitest.config.ts` line ~13)
+The `beforeEach` teardown deletes across 11 tables in a single transaction. On a local Postgres instance with accumulated test data this can take several seconds. The 30-second hook timeout prevents false hook-timeout failures from masking real test failures, while the 15-second `testTimeout` keeps individual test assertions snappy.
+
+**Express `app` is exported as default, enabling supertest in-process** (`src/index.ts` line ~118)
+`export default app;` means supertest can `import app from "../../index"` and call `request(app).post(...)` without binding a real TCP port. Tests are faster, port-conflict-free, and the server never needs to be started externally — the full middleware stack (auth, rate-limit, routes) runs inside the test process.
 ## ASSET:test 2026-06-24 19:18 → vitest 4.1.9 + supertest 7.2.2 configured; auth/db test helpers pre-built; .env.test and npm test scripts wired; ts-node compiles TypeScript tests without a build step
 
 **Test runner and HTTP layer fully installed**
