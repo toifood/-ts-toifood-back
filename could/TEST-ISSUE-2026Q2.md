@@ -15,6 +15,25 @@ Missing test coverage, untested edge cases, flaky tests, gaps in integration and
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:test 2026-06-26 13:51 → runInsightAnalysis cooldown-before-threshold ordering untested; cook record invalid status transitions untested; analyzePantry stemming gap untested; pushRowToGitHub retry logic untested; duplicate recipe title check untested
+
+**`runInsightAnalysis` cooldown-set-before-MIN_RECIPES ordering has no test** (`src/services/ai/insights.ts`)
+The cooldown Redis key is set before `recipes.length < MIN_RECIPES` is checked, permanently locking out analysis for new users for 7 days. No test seeds a user with < 5 recipes, calls `runInsightAnalysis`, asserts no cooldown key was set, then confirms a second call proceeds after the user reaches 5 recipes. The bug is invisible without this sequenced integration test.
+
+**Cook record status-transition rules are entirely untested** (`src/routes/cookRecords.ts`)
+`PATCH /:id/complete` and `PATCH /:id/abandon` have no coverage. Specifically, no test verifies that completing an already-ABANDONED record (or abandoning a COMPLETED one) is either rejected or accepted — the intended behaviour is undocumented and untested. A table-driven test covering all six `(from, to)` transitions would pin the contract.
+
+**`analyzePantry` exact-match false-positive has no test** (`src/services/ai/insights.ts`)
+No test seeds a pantry with "tomato" and a recipe history with "tomatoes", then verifies that the pantry insight does NOT suggest adding "tomatoes". The stemming gap produces wrong suggestions in production but is invisible in the test suite.
+
+**`pushRowToGitHub` retry-on-409 logic is untested** (`src/routes/auth.ts`)
+The two-attempt retry loop that re-fetches the file SHA on a 409 Conflict has no unit or integration test. The most likely failure mode — two simultaneous register calls racing on the same CSV SHA — has no regression coverage. Mocking the GitHub API to return 409 on first PUT and 200 on second would cover the core path.
+
+**Duplicate recipe detection in `POST /recipes` is untested** (`src/routes/recipes.ts` ~line 370)
+The 24-hour title-deduplication query runs on every save and logs a warning on match, but the save proceeds regardless. No test verifies: (a) the warning is logged, (b) a second save with the same title within 24 hours still returns 201 (not blocked), and (c) a save more than 24 hours later is not flagged.
+
+**`storeMetrics` 1-hour in-memory cache has no test** (`src/routes/storeMetrics.ts`)
+The module-level `cache` variable is never tested. No test verifies that a second request within TTL returns the cached response without calling `getAppStoreMetrics()` again, or that a post-TTL request re-fetches. The cache is also never externally invalidatable — that architectural gap is undocumented.
 ## ISSUE:test 2026-06-24 19:18 → Zero test files exist beyond helpers; pluralStem logic, Apple JWT, Ollama queue, discover SQL, and insights cooldown all fully untested
 
 **No actual test files — only helpers exist**
