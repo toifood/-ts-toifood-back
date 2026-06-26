@@ -16,6 +16,22 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:bug 2026-06-26 13:51 → Apple JWKS cached with 1hr TTL; insights uses Promise.allSettled with per-analyzer fallbacks; password-reset HTML escapes user input; auth metric GitHub retry re-fetches SHA on 409; cookRecords pluralStem guards invariant plurals
+
+**Apple JWKS response is cached to avoid per-request key fetches** (`src/routes/auth.ts` ~line 127)
+`getCachedAppleKeys()` stores the key array with a 1-hour TTL. Sign-ins hit `https://appleid.apple.com/auth/keys` at most once per hour; a slow or temporarily unavailable Apple endpoint does not degrade every auth request. Cache invalidation is time-based, which matches Apple's infrequent key-rotation schedule.
+
+**`runInsightAnalysis` uses `Promise.allSettled` — analyzer failures are isolated** (`src/services/ai/insights.ts` ~line 204)
+Each of the five analyzers runs concurrently under `Promise.allSettled`. A rejected promise from one category (e.g., Ollama timeout in `analyzeMealType`) does not cancel the others. `ollamaSuggest` also has an 8-second `AbortController` timeout and returns a hardcoded fallback string on any error, so every analyzer that reaches the LLM call is guaranteed to return a value.
+
+**Password-reset HTML form sanitises token before rendering** (`src/routes/auth.ts` ~line 380)
+`escHtml` escapes `&`, `<`, `>`, and `"` before embedding the user-supplied reset token into the HTML form's hidden input and error messages. Reflected-XSS via a crafted token value in the GET/POST reset form is blocked.
+
+**`pushRowToGitHub` retries on 409 with a fresh SHA** (`src/routes/auth.ts` ~line 35)
+The fire-and-forget GitHub metric writer loops up to 2 attempts. On a 409 Conflict (concurrent commit), it re-fetches the current file SHA and retries the PUT, handling the common race where two auth events land within the same second. Errors are caught and warn-logged rather than propagated.
+
+**`cookRecords.ts` `pluralStem` protects invariant and irregular forms** (`src/routes/cookRecords.ts` ~line 7)
+The stemmer guards the `/ee$/` class ("cheese"→"cheese", "coffee"→"coffee") before applying strip rules, preventing the aggressive over-stripping present in the recipes.ts inline implementation. Twelve irregular plurals (feet, teeth, geese, mice, etc.) are handled explicitly rather than by rule, making cook-record pantry classification correct for common cooking ingredients.
 ## ASSET:bug 2026-06-24 19:18 → Strong input validation at all boundaries; Lua atomic rate-limit counter; chatAlert on generation failures; try-catch on all metric file writes
 
 **Validation boundaries are well-enforced across all routes**
