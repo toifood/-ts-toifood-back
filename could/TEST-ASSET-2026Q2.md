@@ -15,6 +15,15 @@ Existing test infrastructure, coverage breadth, CI test setup, test utilities
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:test 2026-06-27 10:49 → Four untested areas mapped to concrete test strategies: password reset, user update, cook-record lifecycle, admin guard
+
+**Password reset and email verification (`src/__tests__/auth.test.ts`)** — Use the DB helpers in `src/__tests__/helpers/db.ts` to seed users and tokens. Test: (1) `GET /auth/verify-email` with valid token sets `emailVerified=true` and deletes the token; (2) expired token returns 400; (3) `POST /auth/forgot-password` with unknown email returns 200 (no leak); (4) `POST /auth/reset-password` with expired token returns 400; (5) valid token updates `passwordHash` and deletes the token row.
+
+**User update (`src/__tests__/users.test.ts`)** — Test `PATCH /users/me`: (1) name change updates and returns new name; (2) email change succeeds — document current behavior of `emailVerified` remaining `true`, then flip assertion once the bug is fixed; (3) password change with wrong `currentPassword` returns 401; (4) `DELETE /users/me` — verify via direct DB query that user row, recipes, pantry items, and dietary preferences are all gone after the call.
+
+**Cook record lifecycle (`src/__tests__/cookRecords.test.ts`)** — Seed a recipe with known ingredients and a pantry with overlapping items. Test: (1) `POST /records/start` returns the correct `pantryItems`/`groceryItems` split using stem matching; (2) irregular plural ("leaves" → "leaf") resolves correctly; (3) `PATCH /:id/complete` sets `status=COMPLETED` and records `completedAt`; (4) `PATCH /:id/abandon` sets `status=ABANDONED`; (5) calling complete on an already-completed record is idempotent.
+
+**Admin guard (`src/routes/admin.ts`)** — Add two tests: (1) non-admin JWT on `GET /admin/flows` returns 403 with `FORBIDDEN` code; (2) admin-role JWT returns 200 with a `flows` array. Mock `prisma.user.findUnique` in the `requireAdmin` middleware path to control the role without needing live DB state.
 ## ASSET:test 2026-06-26 19:17 → Test gaps mapped to four actionable areas: generate route, rate limiter, insight analysis engine, and OAuth flows
 
 **Generate route (`src/__tests__/recipes.test.ts`)** — Add tests that mock `getAIProvider` / `ClaudeProvider` and exercise: (1) Claude succeeds → response includes `pantryUsed` derived by stem matching; (2) Claude throws → Ollama fallback used and `provider: "ollama"` returned; (3) ingredient sanitisation rejects empty/oversized arrays. Mock `generateOgImage` and `findRecipeVideo` (already mocked) to keep tests fast.
