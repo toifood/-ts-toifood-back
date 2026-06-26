@@ -16,6 +16,13 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:bug 2026-06-26 19:17 → Three confirmed logic gaps: missing email send, mismatched pantry stem matching, Redis-down usage counter
+
+**Register verification gap (`src/routes/auth.ts:226-234`)** — User is created and token returned but `sendVerificationEmail` is never called. Fix: create an `EmailVerificationToken` and call `sendVerificationEmail` immediately after `prisma.user.create`, mirroring the pattern in `POST /auth/resend-verification` (lines 487-499).
+
+**Discover stem-match gap (`src/routes/recipes.ts:1231-1236`)** — The raw SQL uses `LOWER(pu) IN (SELECT LOWER(ingredient) ...)`. To match the `pluralStem()` behaviour used elsewhere, the lateral subquery should apply PostgreSQL's `regexp_replace` to normalise plurals, or alternatively the `pantryUsed` array stored on recipes should already be stemmed at save time so exact matching suffices.
+
+**`getRecipeUsage` Redis-down fallback (`src/middleware/rateLimit.ts:30-46`)** — The catch block should return the actual limit values with `used` set to a sentinel (e.g. `-1`) or re-throw so the caller can surface an error state, rather than silently returning zeros that the frontend interprets as "full quota remaining".
 ## ASSET:bug 2026-06-26 13:51 → Apple JWKS cached with 1hr TTL; insights uses Promise.allSettled with per-analyzer fallbacks; password-reset HTML escapes user input; auth metric GitHub retry re-fetches SHA on 409; cookRecords pluralStem guards invariant plurals
 
 **Apple JWKS response is cached to avoid per-request key fetches** (`src/routes/auth.ts` ~line 127)
