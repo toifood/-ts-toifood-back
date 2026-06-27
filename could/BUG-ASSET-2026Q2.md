@@ -16,6 +16,13 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:ts-toifood-back 2026-06-28 06:25 → atomic Lua rate-limit increment prevents TOCTOU race and duplicate recipe detection guards against double-save
+
+**Finding — `src/middleware/rateLimit.ts`**
+The Redis increment uses a Lua script that atomically sets the key expiry only on the first call (`if c == 1 then EXPIRE`). This prevents the classic race where two concurrent requests both see count===1 and the key never receives an expiry — most naive implementations get this wrong with a separate SET EX call.
+
+**Finding — `src/routes/recipes.ts` (POST /recipes)**
+Before saving, the server queries for a recipe with the same title created in the last 24 hours by the same user. A duplicate is logged as a warning rather than blocked — a conservative choice that preserves user intent while surfacing repeated saves in logs for later analysis.
 ## ASSET:bug 2026-06-27 10:49 → Four additional logic gaps: email reverification skip, admin role leak, insight cooldown before analysis, hardcoded log path
 
 **Email change without reverification (`src/routes/users.ts:PATCH /users/me`)** — Add `emailVerified: false` to the `prisma.user.update` data block whenever `email` changes, then delete any existing `EmailVerificationToken` rows for the user and call `sendVerificationEmail` with a fresh token — mirroring the pattern in `POST /auth/resend-verification`.
