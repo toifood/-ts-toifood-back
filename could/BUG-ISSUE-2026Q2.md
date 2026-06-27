@@ -16,6 +16,13 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:ts-toifood-back 2026-06-28 06:25 → groceryMatchCount is set to pantryUsed.length (wrong value) and email verification email is never sent on registration
+
+**Finding — `src/routes/recipes.ts` lines 284–286**
+`groceryMatchCount` is assigned `pantryUsed.length`, which equals `pantryMatchCount`. Grocery match should represent how many of the recipe's full ingredient list are covered by the user's pantry selections. The `groceryPct` and `groceryMatchCount` columns in `RECIPE-METRIC.csv` are therefore always equal to the pantry figures, making the grocery column meaningless for analytics.
+
+**Finding — `src/routes/auth.ts` (POST /register)**
+`sendVerificationEmail` is imported but never called after `prisma.user.create`. New registrations get a JWT immediately with `emailVerified: false` and must manually call `/auth/resend-verification`. This silently breaks any downstream feature or future gate that checks `emailVerified`.
 ## ISSUE:bug 2026-06-27 10:49 → Email change never resets emailVerified; admin role leaked via public recipe endpoint
 
 **Finding — `src/routes/users.ts` (PATCH /users/me)**
