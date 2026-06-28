@@ -16,6 +16,19 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:backend 2026-06-29 06:31 -> Two new bugs: email change bypasses re-verification, and recipe review returns misleading RECIPE_NOT_FOUND for unshared recipes
+
+**Bug 1 — Email change without re-verification** (`src/routes/users.ts` line 1695)
+When a user updates their email via `PATCH /users/me`, the handler checks the new email is not taken but does NOT set `emailVerified = false`. After the update the user's `emailVerified` flag remains `true` for an email address they may not own. Any feature gated on email verification will incorrectly trust the new unverified address.
+
+Fix: add `emailVerified: false` to the update data object whenever `email` changes.
+
+**Bug 2 — Ambiguous error code in recipe review** (`src/routes/recipes.ts` line 1150)
+```ts
+if (!recipe || !recipe.shareToken) {
+  res.status(404).json({ error: "Recipe not found or not shared", code: "RECIPE_NOT_FOUND" });
+```
+When a recipe exists but has no shareToken, the client receives `RECIPE_NOT_FOUND`. The client cannot distinguish "recipe does not exist" from "recipe exists but is not shared", making targeted error UI impossible. The second case should return a distinct code such as `RECIPE_NOT_SHARED`.
 ## ISSUE:ts-toifood-back 2026-06-28 06:25 → groceryMatchCount is set to pantryUsed.length (wrong value) and email verification email is never sent on registration
 
 **Finding — `src/routes/recipes.ts` lines 284–286**
