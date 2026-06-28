@@ -16,6 +16,10 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:backend 2026-06-29 06:31 -> chatAlert integration on critical failures gives real-time production visibility without log scraping
+
+**Finding — `src/lib/chat.ts` calls in `src/routes/auth.ts` and `src/routes/recipes.ts`**
+Apple auth failures (`chatAlert("🍎 Apple Auth Failed", ...)`) and recipe generation failures (`chatAlert("🍽️ Recipe Generation Failed", ...)`) both fire before returning the error response. The on-call team sees these in Slack/chat immediately rather than discovering them from user reports hours later. The `warn` vs `error` severity distinction is used consistently, enabling different alert thresholds per severity.
 ## ASSET:ts-toifood-back 2026-06-28 06:25 → atomic Lua rate-limit increment prevents TOCTOU race and duplicate recipe detection guards against double-save
 
 **Finding — `src/middleware/rateLimit.ts`**
