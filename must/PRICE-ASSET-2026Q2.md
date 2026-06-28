@@ -1,0 +1,13 @@
+MUST ASSET LOG
+prompt: Pricing model implementation, payment flows, subscription management, billing validation coverage
+path: must/PRICE-ASSET-2026Q2.md
+target: toifood/-ts-toifood-back
+
+INSTRUCTION FOR AI MODEL:
+
+YOU MAY READ AND UPDATE EXISTING ENTRIES AS REQUIREMENTS EVOLVE.
+ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
+
+FORMAT: ## ASSET:{NAME} {YYYY-MM-DD HH:MM} → {CONTENT}
+
+####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
