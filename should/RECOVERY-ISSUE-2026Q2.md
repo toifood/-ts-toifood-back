@@ -11,6 +11,15 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ISSUE:RECOVERY {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->## ISSUE:RECOVERY 2026-06-28 18:28 ▸ No automated backup for PostgreSQL or Redis; single Mac mini host with no documented failover or Prisma rollback procedure
+## ISSUE:RECOVERY 2026-06-29 06:28 ▸ Insights cooldown keys lost on Redis restart; storeMetrics cache lost on process restart; insights Redis cannot distinguish cooldown-set from Redis-error
+
+**Insights cooldown lost on Redis flush/restart**: All `insights:cooldown:{userId}` keys reside in Redis with a 7-day TTL. A Redis restart (without RDB persistence loaded), `FLUSHALL`, or Redis replacement will silently reset every user's cooldown window. On the next recipe generation for any user, `runInsightAnalysis` will re-run for all users simultaneously, creating a spike of Ollama LLM calls and DB writes.
+
+**`NX` return value ambiguity under Redis error**: `redis.set(cooldownKey, '1', 'EX', ..., 'NX')` returns `null` both when the key already exists (skip — correct) and when Redis throws an error (because `enableOfflineQueue: false` causes immediate rejection). The current code path is identical for both cases, meaning a Redis outage silently prevents all insight generation rather than surfacing an error.
+
+**StoreMetrics cache lost on restart**: The storeMetrics 1hr in-memory cache is not persisted. After any process restart (crash, deploy, Mac mini reboot), the first admin request to `/store-metrics` will hit both App Store and Play Store APIs simultaneously — no warm-up period and no fallback if those APIs are slow or rate-limiting at restart time.
+
+**No PM2 ecosystem file**: Process restart behaviour on crash or host reboot is not defined in the repository. Recovery after a Node.js crash relies on undocumented operational steps. (Noted previously; no change detected.)
 
 **No database backup strategy**: No `pg_dump` scripts, backup cron jobs, or references to cloud backup destinations (S3, Backblaze, etc.) are present in the repository. PostgreSQL 16 runs locally on the Mac mini (`scripts/macmini-setup.sh`). A hardware failure or accidental `DROP TABLE` would result in unrecoverable data loss.
 
