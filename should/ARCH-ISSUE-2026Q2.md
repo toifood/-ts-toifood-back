@@ -10,4 +10,16 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 
 FORMAT: ## ISSUE:ARCH {YYYY-MM-DD HH:MM} → {CONTENT}
 
-####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
+####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->## ISSUE:ARCH 2026-06-28 18:28 ▸ Dual-route registration has no deprecation timeline; Redis single-point-of-failure bypasses rate limits on outage
+
+**Legacy route exposure**: `src/index.ts` registers every route twice — once under `/1-1-1/...` (current) and once at bare paths (`/auth`, `/recipes`, `/users`, etc.) kept "until old builds phase out". No sunset date is defined and no mechanism enforces retirement. Old clients on 1-1-0 builds can call unversioned paths indefinitely, preventing clean removal.
+
+**Redis failover gap**: `src/middleware/rateLimit.ts` logs a warning and calls `next()` when Redis is unavailable. This means any Redis outage silently disables all per-user rate limiting, allowing free and premium users to generate unlimited recipes via Ollama or Claude until Redis recovers. The fail-open choice was intentional but is undocumented as an accepted risk.
+
+**JWT without rotation**: `src/middleware/auth.ts` issues JWT tokens with no refresh-token flow. Tokens are long-lived (expiry set at issue time only). A compromised token remains valid until expiry; there is no revocation mechanism.
+
+**Health endpoint blind spots**: `GET /health` returns `{status:"ok"}` unconditionally — it does not probe Prisma or Redis. A cold-start failure or DB disconnect will still return 200, masking incidents from uptime monitors.
+
+**`dump.rdb` committed to repo**: The Redis RDB dump file appears in the repo root. It should be gitignored; if it contains user session keys it represents a data-exposure risk in the repository history.
+
+**Shared package coupling**: `shared/` is a local file dependency (`shared/src/index.ts`) with no versioning. Schema changes to shared types (e.g. `GenerateRecipeRequest`) silently break build parity between back and front without a semver contract.
