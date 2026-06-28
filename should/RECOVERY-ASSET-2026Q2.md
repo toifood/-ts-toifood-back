@@ -1,0 +1,13 @@
+SHOULD ASSET LOG
+prompt: review and update disaster recovery procedures, rollback plans, backup strategies, incident response runbooks
+path: should/RECOVERY-ASSET-2026Q2.md
+target: ts-toifood-back
+
+INSTRUCTION FOR AI MODEL:
+
+YOU MAY READ AND UPDATE EXISTING ENTRIES AS THE SYSTEM EVOLVES.
+ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
+
+FORMAT: ## ASSET:RECOVERY {YYYY-MM-DD HH:MM} → {CONTENT}
+
+####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
