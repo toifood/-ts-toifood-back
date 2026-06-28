@@ -10,4 +10,16 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 
 FORMAT: ## ASSET:RECOVERY {YYYY-MM-DD HH:MM} → {CONTENT}
 
-####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
+####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->## ASSET:RECOVERY 2026-06-28 18:28 ▸ macmini-setup.sh provides repeatable environment bootstrap; Redis fail-open and Cloudflare Tunnel reduce recovery blast radius
+
+**`scripts/macmini-setup.sh` repeatable bootstrap**: Covers Homebrew, Node.js 22 (via nvm), PostgreSQL 16, and Redis installation in a single script. Provides a starting point for environment recreation after hardware replacement, though the hardcoded path and username need updating before reuse on a fresh machine.
+
+**Redis fail-open rate limiting**: `src/middleware/rateLimit.ts` catches Redis errors and calls `next()` with a console warning rather than returning 500. This means a Redis outage degrades gracefully (rate limiting disabled) rather than taking down recipe generation entirely — appropriate given Redis is not the primary data store.
+
+**Cloudflare Tunnel re-routing**: Because ingress arrives via Cloudflare Tunnel rather than direct DNS, recovering to a new host does not require waiting for DNS TTL propagation. The tunnel connector can be restarted on a new machine and pointed at the same origin, giving fast failover for the network layer.
+
+**Stats endpoint cache fallback**: `src/index.ts` stats endpoint returns a stale cached value if the DB query fails, rather than 500. This preserves the public-facing marketing stat display during brief DB unavailability.
+
+**Process crash handlers**: `unhandledRejection` and `uncaughtException` handlers log to stdout before the process continues or exits — ensuring crash causes are captured in whatever log sink the host uses.
+
+**Prisma singleton client** (`src/lib/prisma.ts`): Single `PrismaClient` instance reused across requests prevents connection pool exhaustion during rapid restarts or test runs. In production, connection limits are managed by Prisma's built-in pooling.
