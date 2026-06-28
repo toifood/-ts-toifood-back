@@ -1,0 +1,13 @@
+SHOULD ISSUE LOG
+prompt: review and update architecture patterns, service boundaries, infrastructure decisions, dependency graph
+path: should/ARCH-ISSUE-2026Q2.md
+target: ts-toifood-back
+
+INSTRUCTION FOR AI MODEL:
+
+YOU MAY READ AND UPDATE EXISTING ENTRIES AS THE SYSTEM EVOLVES.
+ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
+
+FORMAT: ## ISSUE:ARCH {YYYY-MM-DD HH:MM} → {CONTENT}
+
+####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
