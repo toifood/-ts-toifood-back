@@ -11,6 +11,15 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ISSUE:ARCH {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->## ISSUE:ARCH 2026-06-28 18:28 ▸ Dual-route registration has no deprecation timeline; Redis single-point-of-failure bypasses rate limits on outage
+## ISSUE:ARCH 2026-06-29 06:28 ▸ Duplicate Redis connections per process; requireAdmin performs uncached DB lookup on every admin request; business logic embedded in route handler
+
+**Two independent Redis connections**: `src/services/ai/insights.ts` instantiates `new Redis(...)` at module load, separate from the `new Redis(...)` in `src/middleware/rateLimit.ts`. Two live connections to the same Redis server from a single Node.js process — no shared connection pool, no coordinated error handling.
+
+**requireAdmin: uncached DB query per request**: `src/routes/admin.ts` `requireAdmin()` calls `prisma.user.findUnique` on every admin endpoint hit to fetch the user's role. The JWT payload does not include a role claim, so every admin action incurs a DB round-trip. Under load or during DB degradation, admin endpoints become slower proportionally.
+
+**Ingredient stemming logic in handler**: `src/routes/cookRecords.ts` embeds `pluralStem()` and `stemMatch()` directly in the route file. This pantry-matching algorithm is specific business logic that should be in a service or utility module to enable reuse (e.g. for insights pantry analysis) and testing in isolation.
+
+**Insights Redis `enableOfflineQueue: false`**: The insights Redis client disables the offline queue. If Redis is unavailable at analysis time, the cooldown key set is skipped silently — `already === null` check cannot distinguish "already set" from "Redis error", potentially running duplicate analyses during a Redis flap.
 
 **Legacy route exposure**: `src/index.ts` registers every route twice — once under `/1-1-1/...` (current) and once at bare paths (`/auth`, `/recipes`, `/users`, etc.) kept "until old builds phase out". No sunset date is defined and no mechanism enforces retirement. Old clients on 1-1-0 builds can call unversioned paths indefinitely, preventing clean removal.
 
