@@ -11,6 +11,15 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ASSET:ARCH {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->## ASSET:ARCH 2026-06-28 18:28 ▸ Clean AI provider abstraction, Cloudflare Tunnel edge, and role-based rate limiting with atomic Redis increment
+## ASSET:ARCH 2026-06-29 06:28 ▸ Insights AI service: Ollama-first with 8s timeout and deterministic fallback; DB-authoritative admin guard; storeMetrics 1hr in-memory cache with error pass-through
+
+**Insights AI service design** (`src/services/ai/insights.ts`): Five insight categories (dietary, cuisine, style, pantry, mealType) each run independent analysis functions. Ollama (`qwen2.5:7b`) is used with an 8-second `AbortController` timeout per call; on failure or timeout, a deterministic fallback string is returned — insights analysis never blocks or errors. Results are upserted with `findFirst + update-in-place` for existing pending insights.
+
+**DB-authoritative admin role check** (`src/routes/admin.ts`): `requireAdmin()` queries the `User` table on every request rather than trusting a role claim in the JWT. This ensures role changes (e.g. demoting an admin) take effect immediately without token invalidation. The tradeoff is one extra DB query per admin action.
+
+**StoreMetrics in-memory cache** (`src/routes/storeMetrics.ts`): App Store and Play Store metrics are cached in memory for 1 hour. The cache is returned on hit without re-fetching — appropriate given store metrics have a 24-48h publication delay. Cache does not survive process restarts.
+
+**Insights dismissed-category exclusion**: `runInsightAnalysis` fetches `dismissed` insights from the last 7 days and excludes those categories from the current analysis run. This prevents re-surfacing insights the user has explicitly rejected within a week.
 
 **AI provider abstraction** (`src/services/ai/index.ts`, `provider.ts`): `AIProvider` interface with three concrete implementations — Ollama (default), OpenAI, Claude. Switched via `AI_PROVIDER` env var. Claude provider targets `claude-haiku-4-5-20251001` at `PROMPT_VERSION=claude-v5`. Emoji extraction and region/continent selection are shared utilities in `provider.ts`, ensuring consistent behaviour across all providers.
 
