@@ -16,6 +16,26 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:bug 2026-07-04 07:06 → Uncaught async route errors hang requests; Ollama mutex ineffective; unauthenticated /chat leaks logs; email-change lockout
+
+**Systemic: async handlers without try/catch — Express 4 swallows the rejection**
+`cookRecords.ts` (all 6 handlers), `lists.ts` (all 6), `pantry.ts` (GET/DELETE), `insights.ts`, `admin.ts` `requireAdmin`, and several `auth.ts`/`recipes.ts` handlers (`register`, `verify-email`, `reset-password`, `/:id`, `/:id/share`, `/:id/review`, note PATCHes) run Prisma calls with no try/catch. Express 4 does not forward async rejections, so any DB error becomes an unhandledRejection (only logged by the process hook in `index.ts`) and the client request hangs until timeout — a silent prod failure mode.
+
+**Ollama serialization queue never serializes — `src/services/ai/ollama.ts` + `src/routes/recipes.ts`**
+`OllamaProvider.queue` is an instance field, but the generate route does `new OllamaProvider()` per request. Concurrent generations hit the 7b model simultaneously, exactly the contention the queue was written to prevent; symptom is random 65s timeouts under parallel load.
+
+**Unauthenticated ops endpoint — `src/routes/chat.ts`**
+`POST /chat` (and `/1-1-6/api/chat`) has no auth and no Google Chat request verification. Anyone can POST `{"message":{"text":"!logs"}}` and receive PM2 logs — which include userIds and request paths — or `!status` for process intel.
+
+**Email change lockout — `src/routes/users.ts` PATCH /me**
+`email` is stored as-sent with no format validation and no `.toLowerCase()`, while register/login normalize to lowercase. A user who changes email to `Jane@Example.com` can never log in again (lookup misses) and password reset also misses — silent account lockout.
+
+**`resend-verification` can hang — `src/routes/auth.ts` + `src/services/email.ts`**
+`createTransport()` throws synchronously when `GMAIL_USER`/`GMAIL_APP_PASSWORD` are unset, and `sendVerificationEmail` is awaited with no try/catch → unhandled rejection, hung request. (`forgot-password` wraps its send correctly — this one doesn't.)
+
+**Carry-overs still open from Q2**
+- `CookRecord` rows stuck in `STARTED` have no expiry/cleanup — force-quit apps orphan them forever and skew stats.
+- `pushRowToGitHub` (`auth.ts`) is a read-modify-write on the GitHub contents API with one 409 retry — concurrent auth events can still drop rows, and the CSV is re-downloaded in full on every append (unbounded growth).
 ## ISSUE:bug 2026-06-08 10:00 â†’ 5 Q2 bugs fixed; 4 production risks remain: orphan sessions, YouTube hang, email 500, no tests
 
 **Resolved since Q2 (branch 1-1-1, commit 0c111be):**
