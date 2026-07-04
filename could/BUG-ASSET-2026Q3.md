@@ -16,6 +16,42 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:bug 2026-07-05 07:03 → Fixes for the chat-webhook auth gap and email-casing bug
+
+**1. Gate `/chat` behind a shared-secret check** (`src/routes/chat.ts`)
+```ts
+const CHAT_WEBHOOK_TOKEN = process.env.CHAT_WEBHOOK_TOKEN;
+
+router.post("/", async (req: Request, res: Response) => {
+  if (!CHAT_WEBHOOK_TOKEN || req.headers["x-webhook-token"] !== CHAT_WEBHOOK_TOKEN) {
+    res.status(401).json({ error: "unauthorized" });
+    return;
+  }
+  // ...existing handler
+});
+```
+Google Chat apps support a bearer token / bot token you configure once in the space integration and echo back on every request — swap `x-webhook-token` for whatever header/verification Google Chat actually sends (or verify the Google-signed JWT if using the newer Chat API) rather than a static token if stronger guarantees are needed.
+
+**2. Normalize email casing everywhere it's read or written** (`src/routes/users.ts`)
+```ts
+// PATCH /me
+const normalizedEmail = email ? email.toLowerCase() : undefined;
+if (normalizedEmail && normalizedEmail !== user.email) {
+  const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  if (existing) {
+    res.status(409).json({ error: "That email is already linked to another account", code: "EMAIL_EXISTS" });
+    return;
+  }
+}
+// ...
+data: {
+  ...(normalizedEmail ? { email: normalizedEmail } : {}),
+  ...
+}
+```
+Consider a one-off backfill migration (`UPDATE "User" SET email = LOWER(email)`) plus a Prisma `@@unique` on a case-insensitive citext/lower expression if any existing rows already drifted into mixed case.
+
+**3. Clean up the stale cascade comment** (`src/routes/users.ts:301`) — replace `UserFlowView` with the current cascade set (`CookRecord`, `UserInsight`, `RecipeReview`) so it matches `prisma/schema.prisma`.
 ## ASSET:bug 2026-07-04 07:06 → Error-handling inventory: layered timeouts, fallback chains, validation boundaries, coded error responses
 
 **Process-level guards** — `index.ts` registers `unhandledRejection` and `uncaughtException` loggers so the pm2 process survives stray errors; request-logging middleware records method/path/status/latency/userId on every response.
