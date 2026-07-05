@@ -15,6 +15,17 @@ Existing test infrastructure, coverage breadth, CI test setup, test utilities
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:test 2026-07-06 07:08 → Real-database integration harness with deterministic isolation, a supertest-safe app export, and clean seams for unit-testing pure logic
+
+**Postgres-backed integration setup is fully wired.** `vitest.config.ts` injects a dedicated test database (`toifood_test`), `JWT_SECRET`, and `REDIS_URL` directly via `test.env`, runs `fileParallelism: false` to serialize suites against the shared DB, and registers `src/__tests__/helpers/db.ts` as a global setup file. Generous `testTimeout: 15000` / `hookTimeout: 30000` accommodate real I/O, and a `shared` path alias mirrors the app's tsconfig-paths setup. `.env.test` duplicates the same values (plus `PORT=3001`) for running the server against the test DB outside vitest.
+
+**Isolation is deterministic, not mocked.** `db.ts` wipes all state in `beforeEach` through a single `prisma.$transaction` whose delete order respects FK constraints (`savedListItem` → `savedList` → `cookRecord` → `userInsight` → … → `user`), and disconnects Prisma in `afterAll`. Every test starts from a truly empty database rather than fixtures with hidden coupling.
+
+**Test utilities remove auth boilerplate.** `src/__tests__/helpers/auth.ts` `createTestUser()` creates a real bcrypt-hashed, email-verified user with a collision-free `randomUUID()`-suffixed email and returns the user, a signed 1h JWT, and a ready `authHeader` string — one call per test to get an authenticated context that exercises the real `requireAuth` middleware.
+
+**The app is import-safe for supertest.** `src/index.ts` guards `app.listen` behind `require.main === module` and exports the Express app as default, so route tests drive the full middleware stack (CORS, JSON limit, passport, logging) without binding a port. `package.json` provides `test` (`vitest run`) and `test:watch` scripts, and `supertest` + `@types/supertest` are already in devDependencies.
+
+**Pure logic is exported at testable seams.** `src/services/ai/provider.ts` exports `extractFoodEmoji`, `pickRegion`, `buildStyleInstruction`, `buildPantryLine`, and the keyword table; AI backends sit behind the `AIProvider` interface with per-provider classes, so unit tests can cover prompt assembly and emoji inference with no network, and route tests can swap providers without touching Express.
 ## ASSET:test 2026-07-05 07:03 → Starter specs for the highest-risk untested paths
 
 **1. `src/__tests__/rateLimit.test.ts` (new)** — targets `getRecipeUsage`/`recipeGenerateRateLimit` in `src/middleware/rateLimit.ts`:
