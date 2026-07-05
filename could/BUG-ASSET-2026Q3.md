@@ -16,6 +16,15 @@ Error handling coverage, validation boundaries, logging on failure paths
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ASSET ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ASSET ENTRIES-->
+## ASSET:bug 2026-07-06 07:08 → Telemetry and alerting are fully isolated from request paths; external calls are consistently timeout-bounded with a flagged fallback chain
+
+**Fire-and-forget side channels can never take down a request.** All three metric writers (`appendMetric` / `appendDiscoverMetric` in `src/routes/recipes.ts`, `appendAuthMetric` in `src/routes/auth.ts`) wrap file I/O in try/catch and degrade to a `console.warn`. Both alert helpers (`src/lib/chat.ts` `chatAlert`, `src/lib/slack.ts` `slackAlert`) no-op when the webhook env var is missing and swallow fetch failures with `.catch(() => {})`. Insight analysis after recipe save is explicitly fire-and-forget with its own `.catch` (`src/routes/recipes.ts`). A dead disk, missing webhook, or Redis outage degrades observability, not availability.
+
+**Every external dependency is timeout-bounded.** Claude: `AbortSignal.timeout(30_000)` (`src/services/ai/claude.ts`); Ollama generation: 65s, deliberately just above the fallback threshold (`src/services/ai/ollama.ts`); YouTube search: 5s `AbortController` with `clearTimeout` in a `finally` (`src/services/youtube.ts`); digest summaries: 15s; insight suggestions: 8s with hardcoded fallback copy (`src/services/ai/insights.ts`). The generate route's Claude→Ollama fallback records `fallback=true` and `usedProvider` in RECIPE-METRIC.csv, so degradation is measurable, and total failure raises a `chatAlert(..., "error")` plus a friendly 500.
+
+**Validation boundaries are explicit and coded.** Register enforces email ≤100, name ≤50, password 8–128 with per-field error codes; generate sanitizes ingredients (type-filter → trim → 50-char slice → drop empties → ≤50 items); notes ≤500 chars; review stars must be an integer 1–5; pantry is capped at 50 with a 409 duplicate response *and* a P2002 catch as a race backstop (`src/routes/pantry.ts`); lists capped at 5; preferences limited to 3 filters with whitelist validation of continents, ageRange, gender, and privacy keys (`src/routes/users.ts`). Rate limiting uses an atomic Lua INCR+EXPIRE and fails open with a warning when Redis is down (`src/middleware/rateLimit.ts`).
+
+**Failure paths log with consistent, greppable tags.** Request-level logging middleware records method/path/status/duration/userId (`src/index.ts`), process-level `unhandledRejection`/`uncaughtException` hooks are installed, and error branches carry structured prefixes (`[recipe:generate]`, `[users:delete]`, `[og-image]`, `[rateLimit]`, `[auth-metrics]`). Enumeration-safe auth endpoints (`forgot-password`, `resend-verification`) always return 200 while logging internally.
 ## ASSET:bug 2026-07-05 07:03 → Fixes for the chat-webhook auth gap and email-casing bug
 
 **1. Gate `/chat` behind a shared-secret check** (`src/routes/chat.ts`)
