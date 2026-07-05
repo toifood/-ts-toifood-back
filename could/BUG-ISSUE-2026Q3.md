@@ -16,6 +16,25 @@ Unhandled rejections, null dereferences, async race conditions, edge cases that 
 PATHS:
 
 ####### <!-- ANCHOR MARKER - ADD ALL NEW ISSUE ENTRIES DIRECTLY BELOW THIS LINE, NEVER DELETE OR EDIT PREVIOUS ISSUE ENTRIES-->
+## ISSUE:bug 2026-07-06 07:08 → Email change keeps verified status, non-transactional preference replace, pantry type-confusion hang, and silent failures in insights cooldown / OG-image cache / auth-metric push
+
+**Finding — `src/routes/users.ts` (`PATCH /users/me`) never resets `emailVerified` on email change**
+The update spread `...(email ? { email } : {})` writes the new address but leaves `emailVerified: true` carried over from the old one, and no verification email is sent (contrast with registration, where accounts start unverified). A user can verify `a@x.com` once, then PATCH to any address they don't own and the account presents as verified — `GET /users/me` reports `emailVerified: true` and `users/:id/profile` exposes it as a trust signal to other users. Fails silently: nothing errors, the flag is just wrong from that point on.
+
+**Finding — `src/routes/users.ts` (`PATCH /users/me/preferences`) — `deleteMany` + `createMany` not in a transaction**
+Dietary preferences are replaced by `prisma.dietaryPreference.deleteMany(...)` followed by a separate `createMany(...)`. A crash, connection drop, or Prisma error between the two silently wipes all preferences (the route has no try/catch, so the rejection also hangs the request under Express 4). Two concurrent PATCHes can interleave delete/create and persist a merged set neither client sent. `prisma.$transaction([...])` is already used for exactly this pattern in `src/__tests__/helpers/db.ts`.
+
+**Finding — `src/routes/pantry.ts` (`POST /pantry`) — `.trim()` called before the type check**
+`const trimmed = ingredient?.trim(); if (!trimmed || typeof trimmed !== "string")` dereferences `.trim` first, so a body of `{"ingredient": 123}` (or an array/object) throws `TypeError: ingredient.trim is not a function` inside an async handler with no try/catch — an unhandledRejection and a client request that hangs until timeout. The `typeof` guard is unreachable for exactly the inputs it was written for; checking `typeof ingredient !== "string"` before trimming fixes it. The ingredient also has no length cap, unlike recipe ingredients which are sliced to 50 chars in `src/routes/recipes.ts`.
+
+**Finding — `src/services/ai/insights.ts` (`runInsightAnalysis`) — weekly cooldown consumed even when analysis fails**
+The Redis `SET ... EX ... NX` cooldown key is written *before* any work happens. If the subsequent Prisma reads throw, or all analyzers fail, the error is only `console.warn`'d by the caller in `src/routes/recipes.ts` — but the user's once-per-week slot is already burned, so they silently get no insights for 7 days per failure. Setting the key only after successful insight creation (or deleting it on failure) closes the gap. Note also `redis` here is a second `ioredis` instance with `enableOfflineQueue: false` — while Redis is down, every save's insight analysis rejects immediately.
+
+**Finding — `src/routes/recipes.ts` (`GET /recipes/public/:token/og-image`) — zero-byte PNG cacheable for 24h**
+`placeholderOgImage` is populated by `void initPlaceholder()` at module load. A request for a legacy recipe (no stored `ogImage`) that arrives before that async init finishes — or after it fails, which is only `console.warn`'d — sends `Buffer.alloc(0)` with `200`, `Content-Type: image/png`, and `Cache-Control: public, max-age=86400`. Cloudflare will cache the empty image for a day, so link previews for that recipe stay broken long after the placeholder is ready. A `404`/`no-store` response when the placeholder is unavailable avoids poisoning the cache.
+
+**Finding — `src/routes/auth.ts` (`pushRowToGitHub`) — read-modify-write race silently drops metric rows**
+Every auth event GETs the full `AUTH-METRIC.csv` from GitHub, appends one line, and PUTs it back with the previous `sha`. Two near-simultaneous logins race: the loser gets `409`, retries once, and if the retry conflicts again (or the second attempt's GET/PUT fails) the row is dropped with only a `console.warn`. Under any real login burst this undercounts silently, and the full-file rewrite grows linearly with CSV size on every single auth event.
 ## ISSUE:bug 2026-07-05 07:03 → Unauthenticated ops webhook + email-casing bug in ts-toifood-back
 
 **Finding — `src/routes/chat.ts` (mounted unauthenticated at `/chat` and `/1-1-6/api/chat` in `src/index.ts:46,62`)**
