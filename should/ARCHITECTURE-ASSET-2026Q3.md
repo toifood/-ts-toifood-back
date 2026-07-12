@@ -11,6 +11,19 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ASSET:{NAME} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
+## ASSET:ARCHITECTURE 2026-07-13 07:12 ▸ July 11–12 wave: Follow graph, timestamp-state user model, Visibility enum, auth-metrics pipeline, Google Chat ops
+
+Delta since the 2026-07-06 entry — topology, AI-provider abstraction, route versioning, Redis rate limits, and Slack/digest ops are unchanged below this entry.
+
+**Follow system (migration `20260711000000_add_follow_model`).** `Follow` is a timestamp-state machine — `acceptedAt` (pending → active), `unfollowedAt` (ended; re-follow reuses the unique `[followerId, followeeId]` row), `mutedAt`, `blockedAt` — no booleans. `src/routes/follows.ts` serves own and friend-view following/followers/pending lists; friend views are gated by `User.followVisibility` (`PATCH /follows/visibility` toggles it). Mounted at `/1-1-6/api/follows` + legacy `/follows`; `/users/me` now returns following/followers counts.
+
+**Timestamp-state user model (migrations `20260711100000`–`130000`).** Booleans replaced by nullable timestamps on User: `premiumSince`/`premiumUntil` (active premium = `premiumUntil` in the future; `src/lib/premium.ts` is the single source of truth, admins always premium), `emailVerifiedAt`, `passwordSetAt` (null = OAuth-only). `20260711120000` backfilled `updatedAt` everywhere as drift cleanup. New `GET /admin/users` (admin-role guard) lists all users and derives linked providers `[google|apple|password]` from data rather than flags.
+
+**Visibility enum (migrations `20260712100000`–`120000`).** `Visibility { private, public }` now gates `SavedList.visibility` and `User.followVisibility`, both defaulting `public` — chosen over share tokens after same-day iteration. Schema stands at 13 models as of `20260712120000_visibility_default_public`.
+
+**Auth metrics pipeline.** Every non-local auth event is appended to `would/AUTH-METRIC.csv` (timestamp, event, method, userId, success, failReason, ip) and mirrored fire-and-forget to GitHub (`toifood-dev/ts-toifood-dev` via `TOIFOOD_CROSS_REPO_TOKEN`). Auth endpoints are rate-limited with `express-rate-limit` (10 req/15 min). Apple sign-in verifies tokens against a 1-hour-cached Apple JWKS.
+
+**Google Chat ops.** `POST /chat` mirrors the Slack bot (`!status`/`!logs`/`!metrics` from pm2 and `would/*.csv`) as a Google Chat app endpoint; alerting also flows through the `chatAlert` webhook helper (`src/lib/chat.ts`). Client force-update floor `/app-config` `minVersion` now defaults to `1.1.9`. Claude provider (`src/services/ai/claude.ts`) uses `claude-haiku-4-5` with JSON-schema structured output (`claude-v5` prompt, 30 s timeout); dietary filters are enforced in the Claude prompt but deliberately omitted from Ollama prompts.
 ## ASSET:ARCHITECTURE 2026-07-06 07:25 ▸ Express+Prisma monolith on Mac mini M4 with pluggable AI providers, versioned routes, Redis rate limits, Slack/digest ops
 
 **Topology.** Single Mac mini M4 behind a Cloudflare Tunnel (`toifood.co.nz`), split across two accounts: `jayreck` runs the Node.js API (:3000, PM2 `toifood-back`) and PostgreSQL 16 (:5432); `jayagent` runs Ollama (:11434, `qwen2.5:7b`), reached over `127.0.0.1`. Bootstrap is `scripts/macmini-setup.sh` (idempotent: Homebrew → Node 22 via nvm → PostgreSQL 16 → clone → `.env` with generated JWT_SECRET → `prisma migrate deploy` → PM2).
