@@ -11,6 +11,17 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ASSET:{NAME} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
+## ASSET:ARCHITECTURE 2026-07-20 07:12 ▸ Recipe/user flagging + admin moderation queue, username system, list color theming; topology/AI/routing/Redis/ops unchanged since 2026-07-13
+
+Delta since the 2026-07-13 entry — topology, AI-provider abstraction, route versioning, Redis rate limits, Follow graph, timestamp-state user model, Visibility enum, and Slack/digest/Chat ops are unchanged below this entry.
+
+**Flagging + moderation (migrations `20260715100000`–`110000`, `src/routes/reports.ts`, `src/routes/admin.ts`).** `RecipeReport`/`UserReport` are separate tables (different owners/cascades) sharing the same shape: `flagType` (`red`=report, `green`=endorse), optional `reason` (required for red, null for green), and a status cycle `pending → accepted/rejected → closed → (re-flag) → pending`. Re-flagging, including flipping red↔green, upserts the same row via the `[reporterId, recipeId]`/`[reporterId, targetId]` unique constraint and resets to pending — same reuse pattern as `Follow`. Self-report is blocked at the route level. Admin queues at `GET /admin/reports/{recipes,users}` (role-gated via `requireAdmin`) filter by status/flagType and decide via `PATCH .../:id/:decision(accept|reject|close)`, stamping `reviewedAt`/`reviewedBy`; `close` is only reachable from `accepted`/`rejected`.
+
+**Username system (migrations `20260715120000`→`130000`, `src/lib/username.ts`).** Two-stage rollout: column added nullable, existing rows backfilled by a script run out-of-band (logged in `ts-toifood-dev`, not this repo), then locked `NOT NULL UNIQUE`. `generateUsername()` slugifies a seed (name or email) to ≤14 chars, appends 3-4 random digits, retries up to 20 times against the unique constraint before throwing. `USERNAME_REGEX` (app-layer only, no DB CHECK) requires letter+digit; a pure-letters username is reachable only via manual SQL, a deliberate escape hatch per the schema comment. All three registration paths (local, Google, Apple) in `src/routes/auth.ts` generate a username at account creation.
+
+**List color theming (migration `20260719100000`, `src/routes/lists.ts`).** `ListColor` enum (`pro/free/admin/classic/creative/neutral/premium/basic/beta`) matches the frontend's `LabelVariant` theme set. New lists default to a random color if none is given; `PATCH` accepts a color-only update alongside (or instead of) rename. Schema now stands at 15 models as of `20260719100000_savedlist_color` (up from 13 on 2026-07-13, adding `RecipeReport`/`UserReport`).
+
+**Recipe share tracking refined (migration `20260718100000`).** `shareToken` (permanent, `nanoid(10)`, set at generation time) is unconditionally public. `POST /recipes/:id/share` now also stamps `shareUpdatedAt` to record when the user last tapped the share button — distinct from the permanent token and from the row's general `updatedAt` — same nullable/not-backfilled convention as `visibilityUpdatedAt`/`User.preferencesUpdatedAt`.
 ## ASSET:ARCHITECTURE 2026-07-13 07:12 ▸ July 11–12 wave: Follow graph, timestamp-state user model, Visibility enum, auth-metrics pipeline, Google Chat ops
 
 Delta since the 2026-07-06 entry — topology, AI-provider abstraction, route versioning, Redis rate limits, and Slack/digest ops are unchanged below this entry.
