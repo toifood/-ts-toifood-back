@@ -11,6 +11,19 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ASSET:{NAME} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
+## ASSET:ARCHITECTURE 2026-08-03 07:18 ▸ Role/rate split into modules/role + modules/rate replacing src/lib/premium.ts + src/middleware/rateLimit.ts; UserRole expands to 4 tiers (free/pro/super_pro/admin); Review.stars dropped, EmailPin gains pendingEmail
+
+Delta since the 2026-07-27 entry — thin-controller domains/modules split, Agent-based language moderation, and schema topology below this entry are otherwise unchanged.
+
+**Role/rate logic relocated into `modules/role` + `modules/rate` (migration `20260728000000_user_role_super_pro`).** The previously separate `src/lib/premium.ts` and `src/middleware/rateLimit.ts` no longer exist in the tree; their responsibilities split into two peer modules following the same "one public door" convention as `modules/language`: `modules/role` owns identity (`getTier()` re-derives role from the DB every request, never trusts the JWT; `requireAdmin` re-reads per request too) and `modules/rate` owns policy (`RATE_PRESETS` per tier, Redis-backed atomic Lua INCR+EXPIRE via `modules/rate/utils.ts`, unchanged fail-open-with-warning behavior on Redis failure). `rate/constants.ts` imports `Tier` directly from `role/constants.ts` (documented exception to the one-public-door rule: plain types flow constants-to-constants between peer modules; behavior-gating functions like `getTier`/`requireAdmin` still route through `register.ts`).
+
+**`UserRole` expands from 3 tiers to 4 (`free/pro/super_pro/admin`), replacing `premium`.** The migration recreates the Postgres enum (Postgres has no `ALTER TYPE ... DROP VALUE`) after confirming 0 rows used `premium`. Role is now stated as the sole source of truth for tiering — `premiumSince`/`premiumUntil` timestamps remain on `User` but are display-only, no longer read for access decisions (per the migration's own comment and `modules/role/constants.ts`). New limits: free 3 ollama/2 claude, pro 10/5, super_pro 30/15, admin unlimited (`modules/rate/constants.ts`) — pro/super_pro replace the old single "premium" tier's 10/5 cap. A `requireTier(minTier)` gate (rank-ordered via `TIER_RANK`) was added alongside but isn't mounted on any route yet (see ISSUE log).
+
+**Review simplified to category-only rating (migration `20260802000000_review_drop_stars`).** The top-level `Review.stars` column is dropped; `ReviewCategoryRating` (taste/difficulty/authentic) is now the only rating surface, and `src/domains/review/register.ts`'s recipe-level average is computed by flattening `categoryRatings` across all reviews rather than reading a single `stars` field. `RecipeReview` (the older, separate simple-star model) is unaffected and still coexists.
+
+**`EmailPin.pendingEmail` added (migration `20260728050000`).** Confirms and extends the existing dual-purpose PIN design already noted in the schema (`pendingEmail: null` verifies the account's current email at signup/login; set = verifying a new email) — the column existed in `prisma/schema.prisma` comments before this migration made it real.
+
+**Schema state.** 17 models, unchanged count from 2026-07-27 (this quarter's changes are column/enum-level: `UserRole` tier expansion, `Review.stars` drop, `EmailPin.pendingEmail` add, plus the `Follow`/`Review` opened-at churn — see ISSUE log for the resulting drift).
 ## ASSET:ARCHITECTURE 2026-07-27 07:18 ▸ Thin-controller domains/modules split now fully wired; Agent-based language moderation (Review/Follow comments) shipped; CookRecord removed; schema at 17 models
 
 Delta since the 2026-07-20 entry — topology, AI-provider selection, route versioning, Redis rate limits, flagging/moderation admin queue, username system, and list color theming are unchanged below this entry.
