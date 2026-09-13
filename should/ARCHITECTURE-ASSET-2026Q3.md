@@ -11,6 +11,11 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ASSET:{NAME} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
+## ASSET:ARCHITECTURE 2026-09-14 08:37 ▸ No architecture change since the 2026-09-07 check — confirmed stable at 20 models, same deployment topology and conventions
+
+**Nothing to record as new state this pass.** `main` has had zero commits since 2026-09-04 (`aeecb1c`), predating the previous 2026-09-07 entry — so the architecture, schema, and conventions documented there remain the accurate current state, re-verified rather than re-described here.
+
+**Confirmed unchanged on direct re-check:** schema still at 20 models (recounted via `grep -c '^model ' prisma/schema.prisma`); deployment topology (single Mac mini M4, two macOS accounts, Cloudflare Tunnel) unchanged per `README.md`; dual `/1-1-6/...` + legacy route mounting unchanged in `src/index.ts`; domain/module split (`src/domains/*` vs `src/modules/*`, one `register.ts` door per module) unchanged; enum-vs-string schema convention and boundary-timestamp lifecycle shape (`Follow`/`Review`/`Note`/`Draft`/`SavedListField`/`UserInsight`) unchanged in `prisma/schema.prisma`.
 ## ASSET:ARCHITECTURE 2026-09-07 08:18 ▸ Deployment topology, route versioning, and schema-hardening conventions now in place
 
 **Deployment topology (per README.md):** single Mac mini M4 running two macOS accounts — `jayreck` hosts this Node.js API (`:3000`) and the colocated PostgreSQL instance (`:5432`); `jayagent` hosts Ollama (`:11434`, `qwen2.5:7b`) reached only via `127.0.0.1`. Public ingress is a Cloudflare Tunnel to `toifood.co.nz`; `src/index.ts` sets `app.set("trust proxy", 1)` to respect the tunnel's `X-Forwarded-For`.
