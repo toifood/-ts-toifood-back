@@ -11,6 +11,21 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ISSUE:{NAME} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
+## ISSUE:ARCHITECTURE 2026-09-14 08:37 ▸ Reverification pass — zero commits to `main` since 2026-09-04, every previously flagged item confirmed still open, no new findings
+
+**Source repo has had no commits since 2026-09-04 (`aeecb1c`), three days before the 2026-09-07 entry was even written.** Confirmed via `GET /repos/toifood/ts-toifood-back/commits?sha=main` — the five most recent commits top out at `2026-09-04T04:58:05Z` ("feat: add updatedAt to matchLists response for both list and match"). There is nothing new to analyze this pass; this entry is a direct re-verification of the 2026-09-07 findings against current HEAD, not a restatement of them.
+
+**Re-verified directly, all unchanged from 2026-09-07:**
+- `.env.example` — still no `REDIS_URL` despite `ioredis` being a hard dependency of `src/modules/rate`.
+- `scripts/macmini-setup.sh` — still clones `jayreck996/ts-toifood-back` (not `toifood/ts-toifood-back`), still `pm2 start dist/index.js` against the real `dist/src/index.js` build output, still seeds `toifood_secret_change_me` as the live DB password, still writes `OLLAMA_MODEL=qwen2.5-claw:7b` into the generated `.env` against the code/README default `qwen2.5:7b`.
+- `README.md` — still documents the retired `Favourite`/`DietaryPreference` model and `/favourites` routes (dropped migration `20260414000000`), still links to `docs/macmini-deployment.md` and `docs/openclaw-integration.md` — confirmed both still 404 (`repos/toifood/ts-toifood-back/contents/docs` returns `404 Not Found`).
+- `src/routes/chat.ts` — still no auth import or token check on the `POST /chat` handler; `!logs`/`!status` remain reachable unauthenticated.
+- `requireTier` (`src/modules/role/register.ts:504`) — re-grepped all of `src/` for the identifier: the only hits outside its own definition are comments in `list/register.ts`, `rate/constants.ts`, `role/constants.ts`, and `color/register.ts` explaining the tier convention — still zero route imports, still unwired to any endpoint.
+- `UserInsight`/`Draft`/`Notification` migration-history gaps — unchanged, since the migration set itself is unchanged (still terminates at `20260828030000_preference_type_value_index`, same as the 2026-08-31/2026-09-07 checks).
+
+**Minor correction to the 2026-08-31 entry's migration count.** It stated "95 `migration.sql` files" — recounting the full `prisma/migrations` tree now: 94 files matching `migration.sql$` plus one `migration_lock.toml` = 95 total directory entries. The disaster-recovery-replay claim (fresh `prisma migrate deploy` halts at `20260530000000` on `UserInsight`) is unaffected either way; flagging only so the running figure stays accurate for whoever next re-verifies it.
+
+**No PostgreSQL backup/restore procedure still exists anywhere in the repo** — unchanged top recovery gap, open since 2026-07-06.
 ## ISSUE:ARCHITECTURE 2026-09-07 08:18 ▸ README and referenced deployment docs have drifted far from actual implementation
 
 **README.md is stale against the live API surface.** It documents a `/favourites` resource backed by a `Favourite`/`DietaryPreference` model that no longer exists in `prisma/schema.prisma` (favourites were superseded by `Bookmark` + `SavedList`), and omits entirely the `Follow`, `Review`, `RecipeReport`/`UserReport`, `Note`, `Draft`, `UserInsight`, `EmailPin`, and `Property` domains that make up most of `src/domains/*`. It also doesn't mention the `/1-1-6/...` versioned route namespace that `src/index.ts` mounts alongside every legacy unprefixed route, or the `ioredis` dependency (`package.json`) that `src/modules/rate` requires for tier-based rate limiting.
