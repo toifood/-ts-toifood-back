@@ -11,6 +11,23 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ASSET:{NAME} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
+## ASSET:ARCHITECTURE 2026-09-28 10:09 ▸ Generated ERD documentation added (`npm run erd` → `docs/ERD.md`), EmailPin opened to google/apple accounts, Gmail SMTP IPv4 fix in place with success-path send logging; schema still 20 models
+
+Changes since the 2026-09-14 entry (`main` at `3c7572d`, 2026-09-24). The schema, migration history, deployment topology, route versioning, and domain/module conventions recorded on 2026-09-07 are otherwise unchanged.
+
+**Generated ERD documentation (`153dc28`).** `scripts/generate-erd.ts` builds a Mermaid `erDiagram` from `Prisma.dmmf`, which the generated `@prisma/client` already contains, so no schema-parser dependency is needed. It writes the result to `docs/ERD.md`, which GitHub renders natively. It runs via the new `npm run erd` script (`ts-node`, already a devDependency). Cardinality comes from each relation's `isRequired`/`isList`, and entities list key fields only (PK/FK/UK); full column lists stay in `prisma/schema.prisma`. The file is marked "do not hand-edit". This is the repo's first committed file under `docs/`. It covers all 20 models, with `User` as the hub and `Recipe`/`SavedList` as secondary parents.
+
+**EmailPin is now available to accounts without a password (`e117fa3`).** `requestPin` and `resendVerification` (`src/domains/auth/register.ts`) no longer need `passwordHash`, so google/apple users can request and complete an EmailPin through the existing `request-pin`/`verify-pin` pair. OAuth sign-in itself is not gated by this. Both endpoints still always return 200 so they don't reveal whether an account exists, and they remain behind `authLimiter` plus `issuePin`'s resend-interval throttle and `checkEmailPinRateLimit`. Three new cases in `src/__tests__/emailPin.test.ts` cover OAuth request, OAuth resend, and the already-verified no-op. The session-token consequence is in the ISSUE log.
+
+**Gmail SMTP EHOSTUNREACH fixed at the process level (`d75b29b` → `3c7572d`).** The 2026-07-17 `family: 4` transport option turned out never to be read by nodemailer's `smtp-connection` and has been removed from `src/modules/email/register.ts`. The fix is now two process-wide settings at the top of `src/index.ts`, set before any socket opens:
+- `dns.setDefaultResultOrder("ipv4first")`
+- `net.setDefaultAutoSelectFamily(false)`
+
+Both are needed. With Happy Eyeballs enabled, `net.connect()` does its own `dns.lookup(..., {all:true})`, which ignores the result order. The commit reports a live check: after a `pm2 restart`, repeated PINs for the affected user got Gmail `250 OK`, `tsc --noEmit` was clean, and vitest passed 13/13.
+
+**Success-path send logging.** `sendPinEmail` now logs `messageId` and the SMTP response when Gmail accepts a message. Before this, the fire-and-forget `issuePin` call only logged failures, so there was no record to check against a user's "never arrived" report. The inline comment notes that SMTP acceptance does not guarantee inbox delivery (SPF/DKIM/DMARC checks happen after acceptance).
+
+**Schema and migrations unchanged.** Still 20 models (recounted); still the same migration set ending at `20260828030000_preference_type_value_index`; no new tables, enums, or columns this period.
 ## ASSET:ARCHITECTURE 2026-09-14 08:37 ▸ No architecture change since the 2026-09-07 check — confirmed stable at 20 models, same deployment topology and conventions
 
 **Nothing to record as new state this pass.** `main` has had zero commits since 2026-09-04 (`aeecb1c`), predating the previous 2026-09-07 entry — so the architecture, schema, and conventions documented there remain the accurate current state, re-verified rather than re-described here.
