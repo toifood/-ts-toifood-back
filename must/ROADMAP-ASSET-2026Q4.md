@@ -11,6 +11,31 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ASSET:{NAME} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
+## ASSET:roadmap 2026-10-12 10:27 ▸ Weekly check: nothing new shipped since 2026-09-24, and every asset in the 2026-10-05 log is still live on `main`
+
+This updates the 2026-10-05 entry. `main` is still at `3c7572d` (2026-09-24), and no new features or migrations have landed. Each asset was confirmed again:
+
+(1) **EmailPin delivery fix is still in place.** `net.setDefaultAutoSelectFamily(false)` is still at `src/index.ts:19`, together with the `ipv4first` DNS order. Signup verification, forgot-password, email change and account deletion all depend on this fix.
+
+(2) **Google/Apple EmailPin support is still live.** `requestPin` and `resendVerification` still work for OAuth-only accounts (`src/domains/auth/register.ts`, comments at lines 264 and 282). The paired ISSUE log tracks that this also lets those accounts sign in with a PIN.
+
+(3) **The ERD generator is still available and the committed ERD is still accurate.** `scripts/generate-erd.ts` (`npm run erd`) and `docs/ERD.md` still match the schema, because no migration has landed after `20260828030000_preference_type_value_index`.
+
+(4) **Earlier assets are still live:**
+- `matchUsers` and `matchLists` preference matching (`src/domains/user/register.ts:537`), including `updatedAt` in the `matchLists` response
+- tier setup through `getTier(user)`
+- admin user list plus report moderation (`src/routes/admin.ts`, 3 `GET` and 2 `PATCH` routes)
+- App Store and Play Store connections, including Play Store crash and ANR rates
+- the recipe provider and style enums
+- the `Preference` model with 65 countries
+- bookmarks
+- public username and QR profiles
+- the `view/friend` route convention
+- the metrics and digest pipeline
+- insight refresh (`POST /insights/refresh`)
+- the full `/1-1-6/*` versioned API surface
+
+Roadmap items that are still open are listed in the paired ISSUE log.
 ## ASSET:roadmap 2026-10-05 09:50 ▸ 2026Q4 opening check: nothing new shipped since 2026-09-24, and everything from Q3 is still live on `main`
 
 This is the first ROADMAP asset log for 2026Q4. No commits have reached `main` since `3c7572d` (2026-09-24), so nothing new has shipped. Everything recorded at the end of Q3 is still in place:
