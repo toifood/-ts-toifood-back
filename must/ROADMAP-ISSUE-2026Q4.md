@@ -11,6 +11,27 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ISSUE:{NAME} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
+## ISSUE:roadmap 2026-10-12 10:27 ▸ Weekly check: still no commits on `main` since 2026-09-24, and all 8 ROADMAP gaps from 2026-10-05 are still open
+
+This updates the 2026-10-05 entry. The newest commit on `main` is still `3c7572d` (2026-09-24, the Happy Eyeballs / EmailPin IPv4 fix), and no migration has landed since `20260828030000_preference_type_value_index`. Each item below was checked again against the current `main`, and the line numbers are confirmed.
+
+(1) **Still open: an emailed PIN works as a sign-in for OAuth-only accounts.** `src/domains/auth/register.ts` still says `requestPin`/`resendVerification` are "no longer gated on passwordHash" (comments at lines 264 and 282). `verifyPin` still issues a session through `signToken(user.id)` (line 252) and records `metric: { event: "login", method: "pin" }` (line 256). Google-only and Apple-only accounts can still be signed into with only an email address and an emailed 6-digit code. There is still no authenticated "verify my email" endpoint that would remove the need for an unauthenticated PIN login.
+
+(2) **Still open: nothing keeps the ERD up to date.** The repo still has no `.github/` directory (contents API returns 404), and no migration hook runs `npm run erd` (`scripts/generate-erd.ts`). `docs/ERD.md` is accurate today only because no migration has landed.
+
+(3) **Still open: there is no way to grant a paid tier.** `package.json` still has no Stripe, RevenueCat, IAP or receipt-verification dependency, and there is no billing or webhook route. The two `PATCH` routes in `src/routes/admin.ts` (lines 54 and 76) both moderate reports. `role`, `premiumSince` and `premiumUntil` are only selected (lines 18-19) and never written.
+
+(4) **Still open: matching returns nobody, because of (3).** `matchUsers` (`src/domains/user/register.ts:537`) still only returns candidates with `u2.role IN ('super_pro', 'admin')` (line 552). Since no real user can reach those roles, `GET /users/view/self/matches` returns an empty list.
+
+(5) **Still open: users can't mute or block.** `Follow.mutedAt` is never referenced in `src/domains/follow/register.ts`. `blockedAt` is only read, as a filter or field (lines 96, 290, 313, 368), and never written.
+
+(6) **Still open: two Play Store metrics are always `null`.** `src/modules/playstore/register.ts:54-55` still hardcodes `installs30d` and `activeDevices30d` to `null`, because the data needs a Play Console BigQuery export.
+
+(7) **Still open: the route version doesn't match `minVersion`.** Routes are still mounted under `/1-1-6/*` (`src/index.ts:77-98`), while the `/app-config` `minVersion` fallback is `"1.1.9"` (`src/index.ts:153`).
+
+(8) **Still open: suggestions can't be accepted or dismissed one at a time.** `src/routes/insights.ts` still has only `GET /` (line 8), `GET /view/system` (line 14) and `POST /refresh` (line 20).
+
+There has been no change for 2.5 weeks. (1) and (3) are still the most important. (1) is a live authentication path. (3) blocks both revenue and matching (4).
 ## ISSUE:roadmap 2026-10-05 09:50 ▸ 2026Q4 opening check: no commits on `main` since 2026-09-24, and all 8 ROADMAP gaps from the 2026-09-28 log are still open
 
 This is the first ROADMAP log for 2026Q4. The newest commit on `main` is still `3c7572d` (2026-09-24), which the 2026-09-28 log already covered. No migration has landed since `20260828030000_preference_type_value_index`. Every open item was checked again against the current `main`.
