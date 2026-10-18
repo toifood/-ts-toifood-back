@@ -11,6 +11,46 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ISSUE:{NAME} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
+## ISSUE:ARCHITECTURE 2026-10-19 09:24 ▸ Update to the 2026-10-12 entry: the repo has no CI at all, so the proposed CI replay check needs a pipeline built first; the setup script reuses the committed test DB password for production; two earlier statements are corrected; the code is still frozen at `3c7572d`
+
+**Context.** `toifood/ts-toifood-back` `main` is still at `3c7572d` (2026-09-24T23:42Z). Listing commits since 2026-09-20 returns only that commit. I checked every open item again today against a full tarball of `main`. The following are unchanged:
+- `verifyPin` (`src/domains/auth/register.ts:231`) still returns a session token (`:252`).
+- `requestPin` (`:268`) is still not gated on `passwordHash`.
+- `src/modules/email/register.ts:51` still logs `to=${to}`.
+- `/chat` `router.post("/")` (`src/routes/chat.ts:55`) still has no auth. `getRecentLogs` still runs `pm2 logs toifood-back … 2>&1`.
+- The process-wide `dns.setDefaultResultOrder("ipv4first")` and `net.setDefaultAutoSelectFamily(false)` calls are still in `src/index.ts:18-19`, and `package.json` still has no `engines` field.
+- `pg_dump`/`backup` still appears 0 times in `README.md` and `scripts/macmini-setup.sh`.
+- `docs/` still contains only `ERD.md`.
+- `.env.example` still has no `REDIS_URL`, but `vitest.config.ts` sets `REDIS_URL: "redis://localhost:6379"`.
+- `requireTier` (`src/modules/role/register.ts:44`) is still not used by any route.
+- There are still 94 migrations. None of them runs `CREATE TABLE` for `UserInsight`, `RecipeReview`, `Property`, `Draft` or `Notification` (each count is 0).
+
+**NEW 7. There is no CI, so the "add as a CI job" fixes have nowhere to go.**
+- The repo has no `.github/` directory, and the tree contains no other CI config.
+- `package.json` scripts are only `test`, `test:watch` and `erd`. There is no `migrate`/`db:*` script.
+- The fixes proposed on 2026-10-05 and 2026-10-12 (`prisma migrate diff --exit-code`, migrate-deploy replay into an empty Postgres, ERD staleness check) all assume a pipeline that doesn't exist. Nothing ever runs `vitest` automatically either.
+- The test database `toifood_test` is never built from migrations. `src/__tests__/helpers/db.ts` only `deleteMany`s 12 models on an existing database. So the test suite cannot detect the five-missing-tables problem, and it doesn't reset `Review`, `Note`, `Draft`, `Notification`, `RecipeReview` or `Property` between tests.
+- **Fix:** add a minimal `.github/workflows/ci.yml` with a `postgres:16` service container. Steps: `npm ci`, then `npx prisma migrate deploy`, then `npx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamodel prisma/schema.prisma --shadow-database-url $SHADOW --exit-code`, then `npm test`. Also run `npm run erd && git diff --exit-code docs/ERD.md`. The `migrate deploy` step will fail until item 4's baseline migration lands. That is the intended signal, so land them together.
+
+**NEW 8. The production DB password is probably the committed test password.**
+- `scripts/macmini-setup.sh:78` writes the production `DATABASE_URL` as `postgresql://toifood:toifood_secret_change_me@localhost:5432/toifood`.
+- The same role and password are committed in `.env.test:1` and hardcoded in `vitest.config.ts`.
+- Unless someone changed the password after setup, which nothing records, the production credential is public in the repo.
+- Exposure is limited because Postgres listens on `localhost:5432` behind the Cloudflare Tunnel. But any foothold on the host, or a future change to `listen_addresses`, would be enough.
+- The test and production databases share one role on one cluster. Running `npm test` on the Mac mini wipes `toifood_test` using a role that can also write to `toifood`.
+- **Fix:** rotate the `toifood` role password, and have the setup script generate one (`openssl rand`). Give tests their own role, limited to `toifood_test`. Do the rotation together with the `pg_dump` step so the backup procedure uses the new credential.
+
+**Corrections to earlier entries.**
+- *PIN login (item 1):* the code comment does **not** call this "verification only". `src/domains/auth/register.ts:229-230` says the endpoint "both verifies AND signs in", and `:261-267` says OAuth accounts can use it "on demand". So signing in by PIN is a deliberate behaviour of the code. What is still open is the narrower issue: no product or security decision records that an OAuth-only account's security now depends on its email inbox, and no test covers `verify-pin` for a user with `passwordHash = null`. Item 1 is reduced from "suspected bug" to "decision to record plus a test to add".
+- *README (item 6):* `README.md` mentions `Favourite` **2** times, not 9. It is still stale, but the cleanup is smaller.
+
+**Revised Q4 order** (replaces the 2026-10-12 order):
+1. (2) Add auth to `/chat` and redact emails from the logs.
+2. (5) Take a schema-only and a full `pg_dump`, then (8) rotate the DB password.
+3. (4) Add the baseline and catch-up migrations and (7) CI in the same PR, so the replay check passes when it first runs.
+4. (1) Record the decision on PIN login for OAuth accounts and add the test.
+
+Items 3 and 6 remain documentation and cleanup.
 ## ISSUE:ARCHITECTURE 2026-10-12 10:43 ▸ Update to the 2026-10-05 baseline: the schema/migration drift is worse than recorded — 5 models are never created, and a fresh `prisma migrate deploy` fails at `20260530000000`; all other items are still open at `3c7572d`
 
 **Context.** `toifood/ts-toifood-back` `main` is still at `3c7572d` (2026-09-24T23:42Z). Listing commits since 2026-09-24 returns only that one. I checked items 1, 2, 3, 5 and 6 of the 2026-10-05 entry again today against `main`, and they are unchanged:
