@@ -11,6 +11,38 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ASSET:{NAME} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
+## ASSET:ARCHITECTURE 2026-10-19 09:24 ▸ Additions to the 2026-10-05/10-12 baseline: no CI or migration tooling exists, the test harness runs against a pre-existing shared Postgres, PIN sign-in is intentional, and the code is still frozen at `3c7572d`
+
+**Context.** `toifood/ts-toifood-back` `main` is unchanged at `3c7572d` (2026-09-24). No commits for 25 days. The 2026-10-05 baseline (code layout, deployment/runtime, auth, docs) and the 2026-10-12 corrections (94 migrations; 15 of 20 models created by migrations; 10 tables created then dropped; 5 never created) were all re-checked today against a full tarball and still hold. This entry only adds facts those entries didn't cover.
+
+**Build and verification tooling (new section).**
+- **CI:** none. There is no `.github/` and no other pipeline config. Deploys and checks are manual on the Mac mini.
+- **npm scripts:** `test` (`vitest run`), `test:watch`, `erd` (`ts-node scripts/generate-erd.ts`). There is no script for `prisma migrate`, seeding or backup.
+- **Test harness:** `vitest.config.ts` runs with `fileParallelism: false` and hardcoded env: `DATABASE_URL=…localhost:5432/toifood_test`, `JWT_SECRET=test-secret-key`, `REDIS_URL=redis://localhost:6379`. The setup file `src/__tests__/helpers/db.ts` truncates 12 models in one `$transaction` (`recipeReport`, `userReport`, `bookmark`, `follow`, `savedListItem`, `savedList`, `userInsight`, `preference`, `pantryItem`, `recipe`, `emailPin`, `user`) before each test. The test schema has to exist already; nothing builds it from migrations.
+- **Test suites present:** among others `emailPin`, `bookmarks`, `reports`, `users`, `recipes`, `lists`, `follows`, `reviews` (`src/__tests__/*.test.ts`).
+
+**Credentials and environments.**
+- **Production:** `scripts/macmini-setup.sh:78` writes `DATABASE_URL=postgresql://toifood:…@localhost:5432/toifood`.
+- **Test:** `.env.test` and `vitest.config.ts` use the same `toifood` role on the same `:5432` cluster, with database `toifood_test`.
+- `.env.example` uses placeholder `user:password@…/toifood`.
+- So production and test are separated only by database name, not by role or host. See ISSUE item 8.
+
+**Auth, clarified.** EmailPin is intentionally a **sign-in** method, not only a verification step. `verifyPin` (`src/domains/auth/register.ts:231`) sets `emailVerifiedAt` if it is empty and always returns `signToken(user.id)` with metric `{ event: "login", method: "pin" }`. `requestPin` (`:268`) is the "Forgot Password" entry point and, per its comment (`:261-267`), is deliberately open to google/apple accounts. The resulting sign-in methods are password (bcrypt 12), Google IdP, Apple IdP and EmailPin. All four issue the same JWT.
+
+**Ops surface, unchanged but detailed.** The `/chat` bot (`src/routes/chat.ts`) offers three commands:
+- `!status`: PM2 status.
+- `!logs`: `pm2 logs toifood-back --lines 20 --nostream 2>&1`, with blank lines filtered out.
+- `!metrics`: counts today's lines in `would/RECIPE-METRIC.csv` and `would/DISCOVER-METRIC.csv` under `process.cwd()`. Those metrics are flat files on the host disk, so they are another piece of host-only state with no backup.
+
+**Recovery state (extended).**
+- Code can be restored from git.
+- The schema cannot be replayed from migrations (stops at `20260530000000`).
+- There is no CI that would catch drift.
+- Host-only state that would be lost with the Mac mini:
+  - the PostgreSQL data, plus the DDL for the 5 tables no migration creates
+  - `would/*-METRIC.csv`
+  - PM2 logs
+  - the production `.env`
 ## ASSET:ARCHITECTURE 2026-10-12 10:43 ▸ Corrections to the 2026-10-05 baseline: there are 94 migrations (not 98), only 15 of the 20 models are created by a migration, and the code is still frozen at `3c7572d`
 
 **Context.** `toifood/ts-toifood-back` `main` is unchanged at `3c7572d` (2026-09-24). The 2026-10-05 baseline is still accurate for the code layout, deployment and runtime, auth, and documentation sections. This entry only corrects the **Schema**, **Migrations**, and **Recovery state** sections, using a full download of every migration.
