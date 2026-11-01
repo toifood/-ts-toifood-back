@@ -11,6 +11,20 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ISSUE:{NAME} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
+## ISSUE:ARCHITECTURE 2026-11-02 10:53 ▸ Update to the 2026-10-19 entry: `main` is still frozen at `3c7572d`, so all 8 items and the revised Q4 order stand, and the quarter is now more than a third gone with none of them started
+
+**Context.** `toifood/ts-toifood-back` `main` is still at `3c7572d` (2026-09-24T23:42Z). The latest five commits are unchanged since the 2026-10-19 entry, and the newest is the Happy Eyeballs fix. This check covered the commit history only. I did not re-read the source this time. No code has changed, so the file and line references in the 2026-10-05, 2026-10-12 and 2026-10-19 entries are still the ones to use.
+
+**Status of the open items (no change since 2026-10-19).**
+- Item 2 (unauthenticated `/chat` plus `to=${to}` email logging) is the most exposed item. It is still open after 38 days on `main` with no fix.
+- Item 4 (five models with no `CREATE TABLE`, so a fresh `prisma migrate deploy` fails) is still open.
+- Item 5 (no `pg_dump` or backup procedure) is still open.
+- Item 7 (no CI) and item 8 (production DB password equals the committed test password) are still open.
+- Item 1 (PIN login for OAuth accounts) is still a decision to record plus a test to add.
+- Items 3 and 6 remain documentation and cleanup.
+
+**Process gap.** Three weekly entries have now repeated the same ordered list with no commits in between. The risk is that the list is being re-read but not acted on.
+- **Fix:** turn the first two steps of the revised order into tracked tickets in `toifood/ts-toifood-back`. Step 1 is `/chat` auth plus log redaction. Step 2 is the `pg_dump` plus password rotation. Each needs an owner and a date. Until then, keep the 2026-10-19 revised order as the plan of record.
 ## ISSUE:ARCHITECTURE 2026-10-19 09:24 ▸ Update to the 2026-10-12 entry: the repo has no CI at all, so the proposed CI replay check needs a pipeline built first; the setup script reuses the committed test DB password for production; two earlier statements are corrected; the code is still frozen at `3c7572d`
 
 **Context.** `toifood/ts-toifood-back` `main` is still at `3c7572d` (2026-09-24T23:42Z). Listing commits since 2026-09-20 returns only that commit. I checked every open item again today against a full tarball of `main`. The following are unchanged:
