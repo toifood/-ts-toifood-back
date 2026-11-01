@@ -11,6 +11,27 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ISSUE:{NAME} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
+## ISSUE:roadmap 2026-11-02 10:40 ▸ Check: still no commits on `main` since 2026-09-24 (5+ weeks), and all 8 ROADMAP gaps from 2026-10-19 are still open
+
+This updates the 2026-10-19 entry. The newest commit on `main` is still `3c7572d` (2026-09-24, "disable Happy Eyeballs so EmailPin's ipv4first DNS fix actually holds"). No migration has landed since `20260828030000_preference_type_value_index`. `package.json` still has no Stripe, RevenueCat, IAP or receipt-verification dependency. Because the code is unchanged, the file and line references from 2026-10-19 still apply.
+
+(1) **Still open: an emailed PIN works as a sign-in for OAuth-only accounts.** `requestPin` and `resendVerification` in `src/domains/auth/register.ts` are still not gated on `passwordHash`. `verifyPin` still issues a session through `signToken(user.id)` and records `metric: { event: "login", method: "pin" }`. There is still no authenticated "verify my email" endpoint.
+
+(2) **Still open: nothing keeps the ERD up to date.** The repo has no `.github/` workflow and no migration hook runs `npm run erd` (`scripts/generate-erd.ts`).
+
+(3) **Still open: there is no way to grant a paid tier.** There is no billing or webhook route. The `PATCH` routes in `src/routes/admin.ts` only moderate reports, and `role`, `premiumSince` and `premiumUntil` are never written.
+
+(4) **Still open: matching returns nobody, because of (3).** `matchUsers` (`src/domains/user/register.ts:537`) only returns candidates with `u2.role IN ('super_pro', 'admin')`.
+
+(5) **Still open: users can't mute or block.** `Follow.mutedAt` is never referenced in `src/domains/follow/register.ts`, and `blockedAt` is only read, never written.
+
+(6) **Still open: two Play Store metrics are always `null`.** `src/modules/playstore/register.ts:54-55` hardcodes `installs30d` and `activeDevices30d` to `null`.
+
+(7) **Still open: the route version doesn't match `minVersion`.** Routes are mounted under `/1-1-6/*` while the `/app-config` `minVersion` fallback is `"1.1.9"` (`src/index.ts`).
+
+(8) **Still open: suggestions can't be accepted or dismissed one at a time.** `src/routes/insights.ts` still has only `GET /`, `GET /view/system` and `POST /refresh`.
+
+Nothing has changed for more than 5 weeks, so this is the fifth check in a row with no movement. (1) and (3) are still the most important: (1) is a live authentication path, and (3) blocks both revenue and matching (4). The 2026-10-26 weekly check was not logged.
 ## ISSUE:roadmap 2026-10-19 09:05 ▸ Weekly check: still no commits on `main` since 2026-09-24, and all 8 ROADMAP gaps from 2026-10-12 are still open
 
 This updates the 2026-10-12 entry. The newest commit on `main` is still `3c7572d` (2026-09-24, "disable Happy Eyeballs so EmailPin's ipv4first DNS fix actually holds"). The newest migration is still `20260828030000_preference_type_value_index`. Each item below was checked again against the current `main`, and every cited line number still matches.
