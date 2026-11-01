@@ -11,6 +11,16 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ASSET:{NAME} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
+## ASSET:ARCHITECTURE 2026-11-02 10:53 ▸ No architecture change since the 2026-10-19 additions: code still frozen at `3c7572d`, so the Q4 baseline (20 models, 94 migrations, single Mac mini plus Cloudflare Tunnel) is unchanged
+
+**Current state.** `toifood/ts-toifood-back` `main` is still at `3c7572d` (2026-09-24T23:42Z), with no commits in the 39 days since. The following descriptions are therefore still accurate:
+- The 2026-10-05 baseline: 20 models, a single Mac mini behind a Cloudflare Tunnel, `/1-1-6` plus legacy routing, and a generated ERD.
+- The 2026-10-12 corrections: 94 migrations, of which only 15 of the 20 models are created by a migration.
+- The 2026-10-19 additions: no CI or migration tooling, a test harness that runs against a pre-existing shared Postgres, and PIN sign-in being intentional.
+
+**Confidence.** This check covered the commit history only, not a fresh read of the source. Treat the earlier entries as current until a new commit lands on `main`. When one does, re-verify the file and line references in the 2026-10-05, 2026-10-12 and 2026-10-19 entries before relying on them.
+
+**Recovery state.** No backup or restore procedure exists yet (`pg_dump` and `backup` appear 0 times in `README.md` and `scripts/macmini-setup.sh`). The only recoverable artefacts are the 94 migrations, which cannot rebuild the full schema, and `docs/ERD.md`, which is generated from the Prisma schema. The first recovery asset to create is a schema-only plus full `pg_dump`, as set out in the 2026-10-19 revised order.
 ## ASSET:ARCHITECTURE 2026-10-19 09:24 ▸ Additions to the 2026-10-05/10-12 baseline: no CI or migration tooling exists, the test harness runs against a pre-existing shared Postgres, PIN sign-in is intentional, and the code is still frozen at `3c7572d`
 
 **Context.** `toifood/ts-toifood-back` `main` is unchanged at `3c7572d` (2026-09-24). No commits for 25 days. The 2026-10-05 baseline (code layout, deployment/runtime, auth, docs) and the 2026-10-12 corrections (94 migrations; 15 of 20 models created by migrations; 10 tables created then dropped; 5 never created) were all re-checked today against a full tarball and still hold. This entry only adds facts those entries didn't cover.
