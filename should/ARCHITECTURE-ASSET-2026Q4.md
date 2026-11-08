@@ -11,6 +11,9 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ASSET:{NAME} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
+## ASSET:ARCHITECTURE 2026-11-09 10:52 ▸ No architecture change since the 2026-11-02 entry: code still frozen at `3c7572d`, so the Q4 baseline (20 models, 94 migrations, single Mac mini plus Cloudflare Tunnel) is unchanged
+
+The baseline recorded on 2026-10-05, with the corrections of 2026-10-12 and the additions of 2026-10-19, still describes the repo exactly. There are 20 Prisma models, of which only 15 are created by a migration, and 94 migrations ending at `20260828030000`. Hosting is still a single Mac mini behind a Cloudflare Tunnel, routing is `/1-1-6` plus legacy routes, and the Mermaid ERD is still generated from the Prisma DMMF (`153dc28`). EmailPin verification for Google and Apple accounts and the IPv4-first DNS fix (`e117fa3`, `d75b29b`, `3c7572d`) remain the most recent behavioural changes. No recovery procedure has been added: there is still no backup script, no CI, and no migration replay check.
 ## ASSET:ARCHITECTURE 2026-11-02 10:53 ▸ No architecture change since the 2026-10-19 additions: code still frozen at `3c7572d`, so the Q4 baseline (20 models, 94 migrations, single Mac mini plus Cloudflare Tunnel) is unchanged
 
 **Current state.** `toifood/ts-toifood-back` `main` is still at `3c7572d` (2026-09-24T23:42Z), with no commits in the 39 days since. The following descriptions are therefore still accurate:
