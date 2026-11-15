@@ -11,6 +11,19 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ISSUE:{NAME} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
+## ISSUE:ARCHITECTURE 2026-11-16 11:40 ▸ Update to the 2026-11-09 entry: `main` is still frozen at `3c7572d` (53 days), so all 8 items and the Q4 order stand, and the quarter is now about 55% gone with none of them started
+
+**Context.** `toifood/ts-toifood-back` `main` is still at `3c7572d` (2026-09-24T23:42Z, the Happy Eyeballs fix). The latest five commits are the same as in the 2026-11-09 entry. The repo still has no `.github` directory, so there is still no CI. There are still 94 migration folders. This check covered the commit history, the migration count and the CI directory only, so the file and line references in the 2026-10-05, 2026-10-12 and 2026-10-19 entries are still the ones to use.
+
+**Status of the open items (no change since 2026-11-09).**
+- Item 2 (unauthenticated `/chat` plus `to=${to}` email logging) is the most exposed item. It is now 53 days on `main` with no fix.
+- Item 4 (five models with no `CREATE TABLE`, so a fresh `prisma migrate deploy` fails at `20260530000000`) is still open.
+- Item 5 (no `pg_dump` or backup procedure) is still open.
+- Item 7 (no CI) and item 8 (production DB password equals the committed test password) are still open.
+- Item 1 (PIN login for OAuth accounts) is still a decision to record plus a test to add.
+- Items 3 and 6 remain documentation and cleanup.
+
+**Process gap.** Five weekly entries have now repeated the same ordered list with no commits in between. The Q4 window is more than half used. Items 2 and 5 are still the smallest changes that remove the largest exposure, so they should be the only two commitments for the coming week. If neither is started by the next entry, record an explicit decision to defer them to 2027Q1 instead of carrying them forward unchanged.
 ## ISSUE:ARCHITECTURE 2026-11-09 10:52 ▸ Update to the 2026-11-02 entry: `main` is still frozen at `3c7572d` (46 days), so all 8 items and the Q4 order stand, and the quarter is now about 40% gone with none of them started
 
 **Context.** `toifood/ts-toifood-back` `main` is still at `3c7572d` (2026-09-24T23:42Z, the Happy Eyeballs fix). The latest five commits are the same as in the 2026-11-02 entry. This check covered the commit history only, so the file and line references in the 2026-10-05, 2026-10-12 and 2026-10-19 entries are still the ones to use.
