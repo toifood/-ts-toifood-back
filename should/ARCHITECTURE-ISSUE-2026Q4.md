@@ -11,6 +11,19 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ISSUE:{NAME} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
+## ISSUE:ARCHITECTURE 2026-11-23 12:27 ▸ Update to the 2026-11-16 entry: `main` is still frozen at `3c7572d` (60 days), so all 8 items stand, the quarter is now about 70% gone, and the 2026-11-16 deadline to start items 2 and 5 or defer them has passed
+
+**Context.** `toifood/ts-toifood-back` `main` is still at `3c7572d` (2026-09-24T23:42Z, the Happy Eyeballs fix). The latest commits are unchanged: `3c7572d`, `153dc28` (Mermaid ERD) and `d75b29b` (IPv4 DNS order). The repo still has no `.github` directory, so there is still no CI, and there are still 94 migration folders. This check covered the commit history, the migration count and the CI directory only, so the file and line references in the 2026-10-05, 2026-10-12 and 2026-10-19 entries are still the ones to use.
+
+**Status of the open items (no change since 2026-11-16).**
+- Item 2 (unauthenticated `/chat` plus `to=${to}` email logging) is the most exposed item. It is now 60 days on `main` with no fix.
+- Item 4 (five models with no `CREATE TABLE`, so a fresh `prisma migrate deploy` fails at `20260530000000`) is still open.
+- Item 5 (no `pg_dump` or backup procedure) is still open.
+- Item 7 (no CI) and item 8 (production DB password equals the committed test password) are still open.
+- Item 1 (PIN login for OAuth accounts) is still a decision to record plus a test to add.
+- Items 3 and 6 remain documentation and cleanup.
+
+**Decision needed.** The 2026-11-16 entry said that if neither item 2 nor item 5 was started by the next entry, the owner should record an explicit decision to defer them to 2027Q1. Neither has been started and no decision is recorded. The owner should now choose one of two options and write it down. The first is to commit this week to item 2 (put `/chat` behind authentication and stop logging the `to` address) and item 5 (a scheduled `pg_dump` kept off the Mac mini). The second is to defer both to 2027Q1 and accept the exposure explicitly. Carrying the list forward unchanged a seventh time is not a decision.
 ## ISSUE:ARCHITECTURE 2026-11-16 11:40 ▸ Update to the 2026-11-09 entry: `main` is still frozen at `3c7572d` (53 days), so all 8 items and the Q4 order stand, and the quarter is now about 55% gone with none of them started
 
 **Context.** `toifood/ts-toifood-back` `main` is still at `3c7572d` (2026-09-24T23:42Z, the Happy Eyeballs fix). The latest five commits are the same as in the 2026-11-09 entry. The repo still has no `.github` directory, so there is still no CI. There are still 94 migration folders. This check covered the commit history, the migration count and the CI directory only, so the file and line references in the 2026-10-05, 2026-10-12 and 2026-10-19 entries are still the ones to use.
