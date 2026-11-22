@@ -11,6 +11,17 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ASSET:{NAME} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
+## ASSET:ARCHITECTURE 2026-11-23 12:27 ▸ No architecture change since the 2026-11-16 entry: code still frozen at `3c7572d` (60 days), so the Q4 baseline (20 models, 94 migrations, single Mac mini plus Cloudflare Tunnel) is unchanged
+
+**Context.** `toifood/ts-toifood-back` `main` is still at `3c7572d` (2026-09-24T23:42Z). The latest commits are the Happy Eyeballs fix, the generated Mermaid ERD and the forced IPv4 DNS order. This check covered the commit history, the migration count (94) and the CI directory (none) only.
+
+**State recorded as still current.**
+- Schema: 20 models in `prisma/schema.prisma`, with `User` as the hub. Only 15 are created by a migration.
+- Migrations: 94 folders, ending at `20260828030000_preference_type_value_index`. Nothing new has landed in more than 12 weeks.
+- Deployment: a single Mac mini M4 running the API (PM2 `toifood-back`, `:3000`) and PostgreSQL (`:5432`), behind a Cloudflare Tunnel to `toifood.co.nz`.
+- Tooling: no CI, and the schema can still only be rebuilt from the live database, not from the migrations.
+
+**Recovery state.** Unchanged. Code can be restored from git. The live PostgreSQL on the Mac mini is still the only complete copy of the data and of the DDL for `UserInsight`, `RecipeReview`, `Property`, `Draft` and `Notification`, and no backup procedure is documented. The flat metric files under `would/` and the production `.env` are also host-only.
 ## ASSET:ARCHITECTURE 2026-11-16 11:40 ▸ No architecture change since the 2026-11-09 entry: code still frozen at `3c7572d`, so the Q4 baseline (20 models, 94 migrations, single Mac mini plus Cloudflare Tunnel) is unchanged
 
 **Context.** `toifood/ts-toifood-back` `main` is still at `3c7572d` (2026-09-24T23:42Z), 53 days old. The latest five commits are unchanged: the Happy Eyeballs fix, the generated Mermaid ERD, the forced IPv4 DNS order, on-demand `EmailPin` verification for Google and Apple accounts, and `updatedAt` on the `matchLists` response.
