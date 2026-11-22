@@ -11,6 +11,31 @@ ADD NEW ENTRIES AT THE TOP FOR NEW TOPICS; UPDATE IN PLACE FOR EXISTING ONES.
 FORMAT: ## ASSET:{NAME} {YYYY-MM-DD HH:MM} → {CONTENT}
 
 ####### <!-- ANCHOR MARKER - ADD OR UPDATE ENTRIES DIRECTLY BELOW THIS LINE -->
+## ASSET:roadmap 2026-11-23 12:12 ▸ Check: nothing new shipped since 2026-09-24, and every asset in the 2026-11-16 log is still live on `main`
+
+This updates the 2026-11-16 entry. `main` is still at `3c7572d` (2026-09-24), and no new features or migrations have landed. Each asset was confirmed again:
+
+(1) **EmailPin delivery fix is still in place.** `net.setDefaultAutoSelectFamily(false)` with the `ipv4first` DNS order is still at the top of `src/index.ts`. Signup verification, forgot-password, email change and account deletion all depend on this fix.
+
+(2) **Google/Apple EmailPin support is still live.** `requestPin` and `resendVerification` still work for OAuth-only accounts (`src/domains/auth/register.ts`, comment at line 264). The paired ISSUE log tracks that this also lets those accounts sign in with a PIN.
+
+(3) **The ERD generator is still available and the committed ERD is still accurate.** `scripts/generate-erd.ts` (`npm run erd`) and `docs/ERD.md` still match the schema, because no migration has landed after `20260828030000_preference_type_value_index`.
+
+(4) **Earlier assets are still live:**
+- `matchUsers` and `matchLists` preference matching, including `updatedAt` in the `matchLists` response
+- tier setup through `getTier(user)`
+- admin user list plus report moderation (`src/routes/admin.ts`, 3 `GET` and 2 `PATCH` routes)
+- the App Store and Play Store connections, including Play Store crash and ANR rates
+- the recipe provider and style enums
+- the `Preference` model with 65 countries
+- bookmarks
+- public username and QR profiles
+- the `view/friend` route convention
+- the metrics and digest pipeline
+- insight refresh (`POST /insights/refresh`, `src/routes/insights.ts:20`)
+- the full `/1-1-6/*` versioned API surface
+
+Roadmap items that are still open are listed in the paired ISSUE log.
 ## ASSET:roadmap 2026-11-16 11:28 ▸ Check: nothing new shipped since 2026-09-24, and every asset in the earlier Q4 logs is still live on `main`
 
 This updates the previous Q4 asset entries. `main` is still at `3c7572d` (2026-09-24), and no new features or migrations have landed. The following assets are still live:
